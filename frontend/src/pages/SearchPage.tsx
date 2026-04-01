@@ -1,6 +1,8 @@
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
+import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
+import { documentsApi } from '@/api/documents.api';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteDocument, useDocuments } from '@/hooks/useDocuments';
 import type { Document } from '@/types';
@@ -13,6 +15,7 @@ export function SearchPage() {
     const [categoryId, setCategoryId] = useState('');
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [shareDoc, setShareDoc] = useState<Document | null>(null);
+    const [editDoc, setEditDoc] = useState<Document | null>(null);
     const [timer, setTimer] = useState<NodeJS.Timeout>();
 
     const { data: categories } = useCategories();
@@ -27,6 +30,27 @@ export function SearchPage() {
         setSearch(val);
         if (timer) clearTimeout(timer);
         setTimer(setTimeout(() => setDebouncedSearch(val), 300));
+    };
+
+    const handleDownload = async (doc: Document) => {
+        try {
+            const response = await documentsApi.download(doc.id);
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = doc.originalName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
+    };
+
+    const handleEdit = (doc: Document) => {
+        setEditDoc(doc);
     };
 
     const documents = docsData?.data || [];
@@ -77,18 +101,25 @@ export function SearchPage() {
                             key={doc.id}
                             document={doc}
                             onView={setSelectedDoc}
-                            onDownload={(d) => window.open(`/api/documents/${d.id}/download`, '_blank')}
+                            onDownload={handleDownload}
                             onDelete={(d) => { if (confirm(`¿Mover "${d.name}" a la papelera?`)) deleteDoc.mutate(d.id); }}
                             onShare={setShareDoc}
+                            onEdit={handleEdit}
                         />
                     ))}
                 </div>
             )}
 
-            <DocumentDetailSheet document={selectedDoc} isOpen={!!selectedDoc} onClose={() => setSelectedDoc(null)}
-                onDownload={(d) => window.open(`/api/documents/${d.id}/download`, '_blank')}
+            <DocumentDetailSheet
+                document={selectedDoc}
+                isOpen={!!selectedDoc}
+                onClose={() => setSelectedDoc(null)}
+                onDownload={handleDownload}
                 onDelete={(d) => { if (confirm(`¿Eliminar?`)) deleteDoc.mutate(d.id); setSelectedDoc(null); }}
-                onShare={setShareDoc} />
+                onShare={setShareDoc}
+                onEdit={handleEdit}
+            />
+            <EditDocumentModal document={editDoc} isOpen={!!editDoc} onClose={() => setEditDoc(null)} />
             <ShareModal document={shareDoc} isOpen={!!shareDoc} onClose={() => setShareDoc(null)} />
         </div>
     );

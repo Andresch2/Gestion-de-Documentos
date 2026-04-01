@@ -1,5 +1,7 @@
+import { documentsApi } from '@/api/documents.api';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
+import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
 import { UploadModal } from '@/components/documents/UploadModal';
 import { useCategories } from '@/hooks/useCategories';
@@ -16,6 +18,7 @@ export function DashboardPage() {
     const [uploadOpen, setUploadOpen] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [shareDoc, setShareDoc] = useState<Document | null>(null);
+    const [editDoc, setEditDoc] = useState<Document | null>(null);
     const [initialFile, setInitialFile] = useState<File | undefined>();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
@@ -48,8 +51,25 @@ export function DashboardPage() {
         noKeyboard: true,
     });
 
-    const handleDownload = (doc: Document) => {
-        window.open(`/api/documents/${doc.id}/download`, '_blank');
+    const handleDownload = async (doc: Document) => {
+        try {
+            const response = await documentsApi.download(doc.id);
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = doc.originalName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
+    };
+
+    const handleEdit = (doc: Document) => {
+        setEditDoc(doc);
     };
 
     const handleDelete = (doc: Document) => {
@@ -93,7 +113,7 @@ export function DashboardPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Bienvenido, {user?.name?.split(' ')[0]} 👋</h1>
+                    <h1 className="text-2xl font-bold">Bienvenido, {user?.name?.split(' ')[0]} </h1>
                     <p className="text-muted-foreground text-sm mt-1">
                         Usando {formatBytes(user?.storageUsedBytes || '0')} de {formatBytes(user?.storageQuotaBytes || '1073741824')}
                     </p>
@@ -150,7 +170,7 @@ export function DashboardPage() {
                 />
                 <select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
                     className="px-3 py-2 rounded-lg bg-slate-800/50 border border-border text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 >
                     <option value="">Todas las categorías</option>
@@ -201,6 +221,7 @@ export function DashboardPage() {
                                 onDownload={handleDownload}
                                 onDelete={handleDelete}
                                 onShare={setShareDoc}
+                                onEdit={handleEdit}
                             />
                         ))}
                     </div>
@@ -232,7 +253,9 @@ export function DashboardPage() {
                 onDownload={handleDownload}
                 onDelete={handleDelete}
                 onShare={setShareDoc}
+                onEdit={handleEdit}
             />
+            <EditDocumentModal document={editDoc} isOpen={!!editDoc} onClose={() => setEditDoc(null)} />
             <ShareModal document={shareDoc} isOpen={!!shareDoc} onClose={() => setShareDoc(null)} />
         </div>
     );

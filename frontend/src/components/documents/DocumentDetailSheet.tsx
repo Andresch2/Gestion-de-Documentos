@@ -1,6 +1,6 @@
 import { daysUntil, formatBytes, formatDate, getExpiryColor } from '@/lib/utils';
 import type { Document } from '@/types';
-import { Building, Calendar, Download, FileText, Hash, Share2, Trash2, X } from 'lucide-react';
+import { Building, Calendar, Download, FileText, Hash, Pencil, Share2, Trash2, X } from 'lucide-react';
 
 interface Props {
     document: Document | null;
@@ -9,9 +9,10 @@ interface Props {
     onDownload?: (doc: Document) => void;
     onDelete?: (doc: Document) => void;
     onShare?: (doc: Document) => void;
+    onEdit?: (doc: Document) => void;
 }
 
-export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload, onDelete, onShare }: Props) {
+export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload, onDelete, onShare, onEdit }: Props) {
     if (!isOpen || !doc) return null;
 
     const days = daysUntil(doc.expiryDate);
@@ -43,6 +44,12 @@ export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload
                         className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium"
                     >
                         <Download className="w-4 h-4" /> Descargar
+                    </button>
+                    <button
+                        onClick={() => onEdit?.(doc)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors text-sm font-medium"
+                    >
+                        <Pencil className="w-4 h-4" /> Editar
                     </button>
                     <button
                         onClick={() => onShare?.(doc)}

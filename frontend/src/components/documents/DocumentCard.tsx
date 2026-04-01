@@ -1,6 +1,6 @@
 import { daysUntil, formatBytes, formatDate, getExpiryColor, getFileIcon } from '@/lib/utils';
 import type { Document } from '@/types';
-import { Download, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { Download, Pencil, RotateCcw, Share2, Trash2 } from 'lucide-react';
 
 interface Props {
     document: Document;
@@ -8,11 +8,12 @@ interface Props {
     onDelete?: (doc: Document) => void;
     onRestore?: (doc: Document) => void;
     onShare?: (doc: Document) => void;
+    onEdit?: (doc: Document) => void;
     onView?: (doc: Document) => void;
     isTrash?: boolean;
 }
 
-export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, onShare, onView, isTrash }: Props) {
+export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, onShare, onEdit, onView, isTrash }: Props) {
     const days = daysUntil(doc.expiryDate);
     const expiryClass = getExpiryColor(days);
     const fileType = getFileIcon(doc.mimeType);
@@ -44,6 +45,13 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                                 title="Descargar"
                             >
                                 <Download className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onEdit?.(doc); }}
+                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                title="Editar"
+                            >
+                                <Pencil className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onShare?.(doc); }}
