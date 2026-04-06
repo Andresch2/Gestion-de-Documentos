@@ -47,4 +47,14 @@ export class QueryDocumentsDto {
     @IsOptional()
     @IsString()
     sortOrder?: 'asc' | 'desc' = 'desc';
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    startDate?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    endDate?: string;
 }

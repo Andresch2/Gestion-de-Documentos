@@ -1,11 +1,12 @@
 import { useCategories } from '@/hooks/useCategories';
 import { useUpdateDocument } from '@/hooks/useDocuments';
-import type { Document } from '@/types';
+import type { Document as AppDocument } from '@/types';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pencil, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
-    document: Document | null;
+    document: AppDocument | null;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -31,8 +32,8 @@ export function EditDocumentModal({ document: doc, isOpen, onClose }: Props) {
             setName(doc.name || '');
             setCategoryId(doc.categoryId || '');
             setDescription(doc.description || '');
-            setExpiryDate(doc.expiryDate ? doc.expiryDate.split('T')[0] : '');
-            setIssueDate(doc.issueDate ? doc.issueDate.split('T')[0] : '');
+            setExpiryDate(doc.expiryDate ? (doc.expiryDate as any).split('T')[0] : '');
+            setIssueDate(doc.issueDate ? (doc.issueDate as any).split('T')[0] : '');
             setIssuingAuthority(doc.issuingAuthority || '');
             setDocumentNumber(doc.documentNumber || '');
             setTags(doc.tags?.map((t) => t.name) || []);
@@ -105,7 +106,9 @@ export function EditDocumentModal({ document: doc, isOpen, onClose }: Props) {
 
                     {/* Original file info (read-only) */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/30 border border-border">
-                        <span className="text-2xl">{doc.category?.icon || '📄'}</span>
+                        <div className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-blue-400">
+                            <CategoryIcon name={doc.category?.icon || 'FileText'} className="w-5 h-5" />
+                        </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-xs text-muted-foreground">Archivo original</p>
                             <p className="text-sm font-medium truncate">{doc.originalName}</p>
@@ -128,7 +131,7 @@ export function EditDocumentModal({ document: doc, isOpen, onClose }: Props) {
                         <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inputClass}>
                             <option value="">Sin categoría</option>
                             {categories?.map((c) => (
-                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                     </div>
@@ -173,6 +176,7 @@ export function EditDocumentModal({ document: doc, isOpen, onClose }: Props) {
                         </div>
                     </div>
 
+                    {/* Description */}
                     <div>
                         <label className="block text-sm font-medium mb-1">Descripción</label>
                         <textarea
@@ -183,6 +187,7 @@ export function EditDocumentModal({ document: doc, isOpen, onClose }: Props) {
                         />
                     </div>
 
+                    {/* Tags */}
                     <div>
                         <label className="block text-sm font-medium mb-1">Tags</label>
                         <div className="flex flex-wrap gap-1.5 mb-2">

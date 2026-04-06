@@ -1,5 +1,6 @@
 import { daysUntil, formatBytes, formatDate, getExpiryColor } from '@/lib/utils';
 import type { Document } from '@/types';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Building, Calendar, Download, FileText, Hash, Pencil, Share2, Trash2, X } from 'lucide-react';
 
 interface Props {
@@ -34,7 +35,13 @@ export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload
                     className="h-48 flex items-center justify-center"
                     style={{ backgroundColor: doc.category?.color ? `${doc.category.color}15` : '#1e2536' }}
                 >
-                    <span className="text-6xl">{doc.category?.icon || '📄'}</span>
+                    <div className="p-6 rounded-3xl bg-card border border-border shadow-2xl">
+                        <CategoryIcon
+                            name={doc.category?.icon || 'FileText'}
+                            className="w-16 h-16"
+                            style={{ color: doc.category?.color || '#94a3b8' }}
+                        />
+                    </div>
                 </div>
 
                 {/* Actions */}
@@ -69,8 +76,8 @@ export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload
                 <div className="p-5 space-y-4">
                     {doc.category && (
                         <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-1 rounded-md" style={{ backgroundColor: `${doc.category.color}20`, color: doc.category.color }}>
-                                {doc.category.icon} {doc.category.name}
+                            <span className="text-xs px-2 py-1 rounded-md flex items-center gap-1.5" style={{ backgroundColor: `${doc.category.color}20`, color: doc.category.color }}>
+                                <CategoryIcon name={doc.category.icon} className="w-3 h-3" /> {doc.category.name}
                             </span>
                         </div>
                     )}

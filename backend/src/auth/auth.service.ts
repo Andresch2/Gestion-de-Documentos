@@ -13,11 +13,11 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const DEFAULT_CATEGORIES = [
-    { name: 'Identidad', color: '#4f8ef7', icon: '🪪' },
-    { name: 'Finanzas', color: '#3ecf7a', icon: '💰' },
-    { name: 'Salud', color: '#f05252', icon: '🏥' },
-    { name: 'Legal', color: '#9b72f5', icon: '⚖️' },
-    { name: 'Propiedad', color: '#f57c42', icon: '🏠' },
+    { name: 'Identidad', color: '#4f8ef7', icon: 'Fingerprint' },
+    { name: 'Finanzas', color: '#3ecf7a', icon: 'Receipt' },
+    { name: 'Salud', color: '#f05252', icon: 'Activity' },
+    { name: 'Legal', color: '#9b72f5', icon: 'Scale' },
+    { name: 'Propiedad', color: '#f57c42', icon: 'Home' },
 ];
 
 @Injectable()

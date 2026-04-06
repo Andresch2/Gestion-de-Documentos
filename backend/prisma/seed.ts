@@ -6,7 +6,7 @@ import * as path from 'path';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🌱 Seeding database...');
+    console.log('[SEED] Seeding database...');
 
     // Create placeholder PDF directory
     const seedDir = path.join(process.cwd(), 'uploads', 'seed');
@@ -18,7 +18,7 @@ async function main() {
         'utf-8',
     );
     fs.writeFileSync(path.join(seedDir, 'placeholder.pdf'), minimalPdf);
-    console.log('📄 Placeholder PDF created');
+    console.log('[FILE] Placeholder PDF created');
 
     // Hash password
     const passwordHash = await bcrypt.hash('Demo1234!', 12);
@@ -34,15 +34,15 @@ async function main() {
             emailVerifiedAt: new Date(),
         },
     });
-    console.log(`👤 Demo user created: ${user.email}`);
+    console.log(`[USER] Demo user created: ${user.email}`);
 
     // Create default categories
     const categoryData = [
-        { name: 'Identidad', color: '#4f8ef7', icon: '🪪' },
-        { name: 'Finanzas', color: '#3ecf7a', icon: '💰' },
-        { name: 'Salud', color: '#f05252', icon: '🏥' },
-        { name: 'Legal', color: '#9b72f5', icon: '⚖️' },
-        { name: 'Propiedad', color: '#f57c42', icon: '🏠' },
+        { name: 'Identidad', color: '#4f8ef7', icon: 'Fingerprint' },
+        { name: 'Finanzas', color: '#3ecf7a', icon: 'Receipt' },
+        { name: 'Salud', color: '#f05252', icon: 'Activity' },
+        { name: 'Legal', color: '#9b72f5', icon: 'Scale' },
+        { name: 'Propiedad', color: '#f57c42', icon: 'Home' },
     ];
 
     const categories: any[] = [];
@@ -63,7 +63,7 @@ async function main() {
         });
         categories.push(category);
     }
-    console.log(`📁 ${categories.length} default categories created`);
+    console.log(`[CAT] ${categories.length} default categories created`);
 
     // Create demo documents
     const documents = [
@@ -148,7 +148,7 @@ async function main() {
             },
         });
     }
-    console.log(`📑 ${documents.length} demo documents created`);
+    console.log(`[DOC] ${documents.length} demo documents created`);
 
     // Update storage used
     const totalSize = documents.reduce((acc, d) => acc + Number(d.fileSizeBytes), 0);
@@ -157,9 +157,9 @@ async function main() {
         data: { storageUsedBytes: BigInt(totalSize) },
     });
 
-    console.log('✅ Seeding completed!');
+    console.log('[DONE] Seeding completed!');
     console.log('');
-    console.log('📧 Demo credentials:');
+    console.log(' [Login] Demo credentials:');
     console.log('   Email: demo@gestordoc.app');
     console.log('   Password: Demo1234!');
 }

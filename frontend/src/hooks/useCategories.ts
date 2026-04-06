@@ -23,6 +23,18 @@ export function useCreateCategory() {
     });
 }
 
+export function useUpdateCategory() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string; icon?: string } }) =>
+            categoriesApi.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+        },
+    });
+}
+
 export function useDeleteCategory() {
     const queryClient = useQueryClient();
     return useMutation({

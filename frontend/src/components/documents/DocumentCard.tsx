@@ -1,6 +1,7 @@
 import { daysUntil, formatBytes, formatDate, getExpiryColor, getFileIcon } from '@/lib/utils';
 import type { Document } from '@/types';
-import { Download, Pencil, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Download, File as FileIcon, Pencil, RotateCcw, Share2, Trash2 } from 'lucide-react';
 
 interface Props {
     document: Document;
@@ -28,7 +29,13 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                 className="h-32 flex items-center justify-center relative"
                 style={{ backgroundColor: doc.category?.color ? `${doc.category.color}15` : '#1e2536' }}
             >
-                <span className="text-4xl">{doc.category?.icon || '📄'}</span>
+                <div className="p-4 rounded-2xl bg-card border border-border shadow-xl">
+                    <CategoryIcon
+                        name={doc.category?.icon || 'FileText'}
+                        className="w-12 h-12"
+                        style={{ color: doc.category?.color || '#94a3b8' }}
+                    />
+                </div>
 
                 {/* File type badge */}
                 <span className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/40 text-white/80 backdrop-blur-sm">

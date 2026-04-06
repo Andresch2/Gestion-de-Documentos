@@ -100,6 +100,8 @@ export interface DocumentQueryParams {
     categoryId?: string;
     search?: string;
     tags?: string;
+    startDate?: string;
+    endDate?: string;
     isDeleted?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

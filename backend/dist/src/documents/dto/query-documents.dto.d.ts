@@ -7,4 +7,6 @@ export declare class QueryDocumentsDto {
     isDeleted?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    startDate?: string;
+    endDate?: string;
 }

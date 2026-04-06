@@ -1,7 +1,9 @@
 import { usersApi } from '@/api/notifications.api';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
-import { AlertTriangle, Bell, Download, HardDrive, Settings, Shield, User } from 'lucide-react';
+import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Activity, AlertTriangle, Bell, Briefcase, Camera, Car, Check, CreditCard, Download, FileText, Files, Fingerprint, Folder, FolderOpen, Globe, GraduationCap, HardDrive, Heart, Music, Pencil, Plane, Plus, Receipt, Scale, Settings, Shield, ShoppingBag, Trophy, Trash2, User, Utensils, X, Zap } from 'lucide-react';
 import { useState } from 'react';
 
 export function SettingsPage() {
@@ -26,6 +28,24 @@ export function SettingsPage() {
     const [emailExpiry, setEmailExpiry] = useState(() => localStorage.getItem('notif-expiry') !== 'false');
     const [emailUpload, setEmailUpload] = useState(() => localStorage.getItem('notif-upload') !== 'false');
     const [emailShare, setEmailShare] = useState(() => localStorage.getItem('notif-share') !== 'false');
+
+    // Categories state
+    const { data: categories, isLoading: categoriesLoading } = useCategories();
+    const createCategory = useCreateCategory();
+    const updateCategory = useUpdateCategory();
+    const deleteCategory = useDeleteCategory();
+
+    const [editingCatId, setEditingCatId] = useState<string | null>(null);
+    const [catName, setCatName] = useState('');
+    const [catColor, setCatColor] = useState('#4f8ef7');
+    const [catIcon, setCatIcon] = useState('Folder');
+    const [isAdding, setIsAdding] = useState(false);
+
+    const availableIcons = [
+        'Folder', 'Files', 'FileText', 'Fingerprint', 'Receipt', 'CreditCard',
+        'Activity', 'Heart', 'Shield', 'Zap', 'Scale', 'Briefcase', 'GraduationCap',
+        'Home', 'Car', 'Plane', 'ShoppingBag', 'Utensils', 'Camera', 'Globe', 'Trophy', 'Music'
+    ];
 
     const handleSaveProfile = async () => {
         setProfileLoading(true);
@@ -60,6 +80,41 @@ export function SettingsPage() {
         }
     };
 
+    const handleCreateCategory = async () => {
+        if (!catName) return;
+        try {
+            await createCategory.mutateAsync({ name: catName, color: catColor, icon: catIcon });
+            setCatName('');
+            setIsAdding(false);
+        } catch (err) {
+            console.error('Failed to create category:', err);
+        }
+    };
+
+    const handleUpdateCategory = async (id: string) => {
+        if (!catName) return;
+        try {
+            await updateCategory.mutateAsync({ id, data: { name: catName, color: catColor, icon: catIcon } });
+            setEditingCatId(null);
+            setCatName('');
+        } catch (err) {
+            console.error('Failed to update category:', err);
+        }
+    };
+
+    const startEdit = (cat: any) => {
+        setEditingCatId(cat.id);
+        setCatName(cat.name);
+        setCatColor(cat.color);
+        setCatIcon(cat.icon);
+    };
+
+    const cancelEdit = () => {
+        setEditingCatId(null);
+        setCatName('');
+        setIsAdding(false);
+    };
+
     const handleExport = async () => {
         try {
             const { data } = await usersApi.exportData();
@@ -77,6 +132,7 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'profile', label: 'Perfil', icon: User },
+        { id: 'categories', label: 'Categorías', icon: FolderOpen },
         { id: 'security', label: 'Seguridad', icon: Shield },
         { id: 'notifications', label: 'Notificaciones', icon: Bell },
         { id: 'storage', label: 'Almacenamiento', icon: HardDrive },
@@ -136,6 +192,133 @@ export function SettingsPage() {
                         className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium text-sm hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all">
                         {profileLoading ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
+                </div>
+            )}
+
+            {/* Categories */}
+            {activeTab === 'categories' && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">Tus Categorías</h2>
+                        {!isAdding && (
+                            <button
+                                onClick={() => { setIsAdding(true); setCatName(''); setCatColor('#4f8ef7'); setCatIcon('Folder'); }}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-sm font-medium transition-colors"
+                            >
+                                <Plus className="w-4 h-4" /> Nueva Categoría
+                            </button>
+                        )}
+                    </div>
+
+                    {(isAdding || editingCatId) && (
+                        <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <h3 className="text-sm font-medium">{isAdding ? 'Crear Nueva Categoría' : 'Editar Categoría'}</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="sm:col-span-1">
+                                    <label className="block text-xs text-muted-foreground mb-1">Nombre</label>
+                                    <input
+                                        value={catName}
+                                        onChange={(e) => setCatName(e.target.value)}
+                                        placeholder="Ej: Finanzas"
+                                        className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-muted-foreground mb-1">Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={catColor}
+                                            onChange={(e) => setCatColor(e.target.value)}
+                                            className="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer"
+                                        />
+                                        <span className="text-xs font-mono text-muted-foreground uppercase">{catColor}</span>
+                                    </div>
+                                </div>
+                                <div className="sm:col-span-3">
+                                    <label className="block text-xs text-muted-foreground mb-2">Seleccionar Icono Profesional</label>
+                                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-2 p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+                                        {availableIcons.map((iconName) => (
+                                            <button
+                                                key={iconName}
+                                                type="button"
+                                                onClick={() => setCatIcon(iconName)}
+                                                className={`p-2 rounded-md transition-all flex items-center justify-center ${catIcon === iconName ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' : 'bg-slate-800 text-muted-foreground hover:text-white hover:bg-slate-700'}`}
+                                                title={iconName}
+                                            >
+                                                <CategoryIcon name={iconName} className="w-4 h-4" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    onClick={cancelEdit}
+                                    className="px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-accent transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => isAdding ? handleCreateCategory() : handleUpdateCategory(editingCatId!)}
+                                    disabled={!catName}
+                                    className="px-4 py-1.5 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                                >
+                                    {isAdding ? 'Crear' : 'Guardar'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {categoriesLoading ? (
+                            [...Array(4)].map((_, i) => (
+                                <div key={i} className="h-16 rounded-xl border border-border bg-card/50 animate-pulse" />
+                            ))
+                        ) : categories?.length === 0 ? (
+                            <div className="sm:col-span-2 text-center py-8 text-muted-foreground">
+                                <p>No has creado categorías personalizadas todavía.</p>
+                            </div>
+                        ) : (
+                            categories?.map((cat) => (
+                                <div
+                                    key={cat.id}
+                                    className="p-3 rounded-xl border border-border bg-card/50 flex items-center justify-between group hover:border-blue-500/30 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
+                                                style={{ backgroundColor: `${cat.color}20`, border: `1px solid ${cat.color}40`, color: cat.color }}
+                                            >
+                                                <CategoryIcon name={cat.icon} className="w-5 h-5" />
+                                            </div>
+                                        <div>
+                                            <p className="text-sm font-medium">{cat.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {cat._count?.documents || 0} documentos
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => startEdit(cat)}
+                                            className="p-1.5 rounded-md hover:bg-blue-500/10 text-blue-400 transition-colors"
+                                            title="Editar"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => { if (confirm('¿Eliminar esta categoría?')) deleteCategory.mutate(cat.id); }}
+                                            className="p-1.5 rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
 

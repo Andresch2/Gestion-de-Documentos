@@ -49,6 +49,12 @@ export class DocumentsService {
             };
         }
 
+        if (query.startDate || query.endDate) {
+            where.issueDate = {};
+            if (query.startDate) where.issueDate.gte = new Date(query.startDate);
+            if (query.endDate) where.issueDate.lte = new Date(query.endDate);
+        }
+
         const orderBy: any = {};
         orderBy[sortBy || 'createdAt'] = sortOrder || 'desc';
 

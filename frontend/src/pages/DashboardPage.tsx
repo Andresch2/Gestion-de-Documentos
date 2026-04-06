@@ -9,7 +9,7 @@ import { useDeleteDocument, useDocuments, useDocumentStats, useExpiringDocuments
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import type { Document, DocumentQueryParams } from '@/types';
-import { Clock, FileText, FolderOpen, Grid3X3, List, Plus, Trash2, Upload } from 'lucide-react';
+import { ArrowUpDown, Calendar, Clock, FileText, Filter, FolderOpen, Grid3X3, List, Plus, Search, Tag as TagIcon, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -25,11 +25,24 @@ export function DashboardPage() {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [page, setPage] = useState(1);
 
+    // Advanced filters state
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [tagsQuery, setTagsQuery] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
     const params: DocumentQueryParams = {
         page,
         limit: 20,
         search: searchQuery || undefined,
         categoryId: selectedCategory || undefined,
+        tags: tagsQuery || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        sortBy,
+        sortOrder,
     };
 
     const { data: docsData, isLoading } = useDocuments(params);
@@ -161,37 +174,127 @@ export function DashboardPage() {
             )}
 
             {/* Filters */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <input
-                    type="text"
-                    placeholder="Buscar documentos..."
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="flex-1 min-w-[200px] px-4 py-2 rounded-lg bg-slate-800/50 border border-border text-white placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                />
-                <select
-                    value={selectedCategory}
-                    onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                    className="px-3 py-2 rounded-lg bg-slate-800/50 border border-border text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                    <option value="">Todas las categorías</option>
-                    {categories?.map((c) => (
-                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                    ))}
-                </select>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                    <button
-                        onClick={() => setViewMode('grid')}
-                        className={`p-2 ${viewMode === 'grid' ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground hover:bg-accent'} transition-colors`}
+            <div className="space-y-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                            type="text"
+                            placeholder="Buscar documentos..."
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800/50 border border-border text-white placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        />
+                    </div>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
+                        className="px-3 py-2 rounded-lg bg-slate-800/50 border border-border text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     >
-                        <Grid3X3 className="w-4 h-4" />
-                    </button>
+                        <option value="">Todas las categorías</option>
+                        {categories?.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
                     <button
-                        onClick={() => setViewMode('list')}
-                        className={`p-2 ${viewMode === 'list' ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground hover:bg-accent'} transition-colors`}
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${showAdvanced ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' : 'bg-slate-800/50 border-border text-muted-foreground hover:text-foreground'
+                            }`}
                     >
-                        <List className="w-4 h-4" />
+                        <Filter className="w-4 h-4" /> Filtros {showAdvanced ? 'Ocultar' : 'Más'}
                     </button>
+                    <div className="flex rounded-lg border border-border overflow-hidden ml-auto">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-2 ${viewMode === 'grid' ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground hover:bg-accent'} transition-colors`}
+                        >
+                            <Grid3X3 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`p-2 ${viewMode === 'list' ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground hover:bg-accent'} transition-colors`}
+                        >
+                            <List className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
+
+                {/* Advanced Filters Panel */}
+                {showAdvanced && (
+                    <div className="p-4 rounded-xl border border-border bg-card/30 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <TagIcon className="w-3 h-3" /> Etiquetas (por coma)
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="factura, 2024..."
+                                value={tagsQuery}
+                                onChange={(e) => { setTagsQuery(e.target.value); setPage(1); }}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3" /> Desde
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3" /> Hasta
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <ArrowUpDown className="w-3 h-3" /> Ordenar por
+                            </label>
+                            <div className="flex gap-1">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                                    className="flex-1 px-2 py-1.5 rounded-lg bg-slate-900/50 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                                >
+                                    <option value="createdAt">Fecha Subida</option>
+                                    <option value="issueDate">Fecha Emisión</option>
+                                    <option value="name">Nombre</option>
+                                    <option value="fileSizeBytes">Tamaño</option>
+                                </select>
+                                <button
+                                    onClick={() => { setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); setPage(1); }}
+                                    className="px-2 py-1.5 rounded-lg bg-slate-900/50 border border-slate-700 text-muted-foreground hover:text-white transition-colors"
+                                >
+                                    {sortOrder === 'asc' ? 'ASC' : 'DESC'}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="md:col-span-3 lg:col-span-4 flex justify-end">
+                            <button
+                                onClick={() => {
+                                    setTagsQuery('');
+                                    setStartDate('');
+                                    setEndDate('');
+                                    setSortBy('createdAt');
+                                    setSortOrder('desc');
+                                    setPage(1);
+                                }}
+                                className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                            >
+                                <X className="w-3 h-3" /> Limpiar filtros
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Documents grid */}
