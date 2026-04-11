@@ -4,11 +4,11 @@ export declare class NotificationsService {
     constructor(prisma: PrismaService);
     findAll(userId: string, page?: number, limit?: number): Promise<{
         data: {
-            data: import("@prisma/client/runtime/library").JsonValue | null;
-            id: string;
-            createdAt: Date;
-            userId: string;
             type: import(".prisma/client").$Enums.NotificationType;
+            id: string;
+            userId: string;
+            createdAt: Date;
+            data: import("@prisma/client/runtime/library").JsonValue | null;
             message: string;
             isRead: boolean;
         }[];

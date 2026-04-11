@@ -13,25 +13,25 @@ export declare class DocumentsService {
         data: {
             fileSizeBytes: string;
             tags: {
+                name: string;
                 id: string;
                 userId: string;
-                name: string;
             }[];
             category: {
-                id: string;
-                createdAt: Date;
-                userId: string;
                 name: string;
+                id: string;
+                userId: string;
+                createdAt: Date;
                 color: string;
                 icon: string;
                 isDefault: boolean;
             } | null;
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
             description: string | null;
-            updatedAt: Date;
+            id: string;
+            userId: string;
+            createdAt: Date;
+            categoryId: string | null;
             fileKey: string;
             mimeType: string;
             originalName: string;
@@ -42,7 +42,7 @@ export declare class DocumentsService {
             isDeleted: boolean;
             deletedAt: Date | null;
             scanStatus: import(".prisma/client").$Enums.ScanStatus;
-            categoryId: string | null;
+            updatedAt: Date;
         }[];
         meta: {
             page: number;
@@ -54,25 +54,25 @@ export declare class DocumentsService {
     findOne(id: string, userId: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -83,30 +83,30 @@ export declare class DocumentsService {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     create(userId: string, dto: CreateDocumentDto, file: Express.Multer.File, ipAddress?: string, userAgent?: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -117,30 +117,30 @@ export declare class DocumentsService {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     findExpiring(userId: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -151,30 +151,30 @@ export declare class DocumentsService {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }[]>;
     update(id: string, userId: string, dto: UpdateDocumentDto, ipAddress?: string, userAgent?: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -185,7 +185,7 @@ export declare class DocumentsService {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     softDelete(id: string, userId: string, ipAddress?: string, userAgent?: string): Promise<{
         message: string;

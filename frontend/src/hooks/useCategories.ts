@@ -19,6 +19,7 @@ export function useCreateCategory() {
             categoriesApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
         },
     });
 }

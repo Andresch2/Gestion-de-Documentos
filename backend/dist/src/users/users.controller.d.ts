@@ -7,34 +7,34 @@ export declare class UsersController {
     getMe(userId: string): Promise<{
         storageUsedBytes: string;
         storageQuotaBytes: string;
+        _count: {
+            documents: number;
+        };
         categories: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         }[];
-        _count: {
-            documents: number;
-        };
+        name: string;
         id: string;
         createdAt: Date;
-        name: string;
+        updatedAt: Date;
         email: string;
         emailVerifiedAt: Date | null;
-        updatedAt: Date;
     }>;
     updateMe(userId: string, dto: UpdateUserDto): Promise<{
         storageUsedBytes: string;
         storageQuotaBytes: string;
+        name: string;
         id: string;
         createdAt: Date;
-        name: string;
+        updatedAt: Date;
         email: string;
         emailVerifiedAt: Date | null;
-        updatedAt: Date;
     }>;
     changePassword(userId: string, dto: ChangePasswordDto): Promise<{
         message: string;
@@ -48,10 +48,10 @@ export declare class UsersController {
             createdAt: Date;
         };
         categories: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;

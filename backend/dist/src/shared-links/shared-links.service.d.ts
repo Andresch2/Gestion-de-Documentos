@@ -8,49 +8,35 @@ export declare class SharedLinksService {
     private readonly auditService;
     constructor(prisma: PrismaService, configService: ConfigService, auditService: AuditService);
     create(userId: string, dto: CreateSharedLinkDto): Promise<{
-        accessUrl: string;
-        document: {
-            id: string;
-            createdAt: Date;
-            userId: string;
-            name: string;
-            description: string | null;
-            updatedAt: Date;
-            fileKey: string;
-            fileSizeBytes: bigint;
-            mimeType: string;
-            originalName: string;
-            issuingAuthority: string | null;
-            documentNumber: string | null;
-            issueDate: Date | null;
-            expiryDate: Date | null;
-            isDeleted: boolean;
-            deletedAt: Date | null;
-            scanStatus: import(".prisma/client").$Enums.ScanStatus;
-            categoryId: string | null;
-        };
         id: string;
-        createdAt: Date;
-        userId: string;
         documentId: string;
-        isOneTime: boolean;
+        userId: string;
         token: string;
         expiresAt: Date | null;
+        isOneTime: boolean;
         accessCount: number;
         accessedAt: Date | null;
+        createdAt: Date;
+        document: {
+            id: string;
+            name: string;
+            mimeType: string;
+            originalName: string;
+        };
+        accessUrl: string;
     }>;
     findAll(userId: string): Promise<({
         document: {
-            id: string;
             name: string;
+            id: string;
             mimeType: string;
             originalName: string;
         };
     } & {
-        id: string;
-        createdAt: Date;
-        userId: string;
         documentId: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         isOneTime: boolean;
         token: string;
         expiresAt: Date | null;
@@ -67,12 +53,12 @@ export declare class SharedLinksService {
         originalName: string;
     }>;
     publicDownload(documentId: string, token: string): Promise<{
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         fileSizeBytes: bigint;
         mimeType: string;
@@ -84,6 +70,6 @@ export declare class SharedLinksService {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
 }

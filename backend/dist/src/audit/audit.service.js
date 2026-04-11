@@ -18,6 +18,42 @@ let AuditService = AuditService_1 = class AuditService {
         this.prisma = prisma;
         this.logger = new common_1.Logger(AuditService_1.name);
     }
+    async findAll(userId, params) {
+        const page = Math.max(1, params?.page || 1);
+        const limit = Math.min(100, Math.max(1, params?.limit || 20));
+        const skip = (page - 1) * limit;
+        const where = {
+            userId,
+            ...(params?.action ? { action: params.action } : {}),
+            ...(params?.documentId ? { documentId: params.documentId } : {}),
+        };
+        const [data, total] = await Promise.all([
+            this.prisma.auditLog.findMany({
+                where,
+                include: {
+                    document: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.auditLog.count({ where }),
+        ]);
+        return {
+            data,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
     async log(params) {
         try {
             await this.prisma.auditLog.create({

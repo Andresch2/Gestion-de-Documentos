@@ -13,6 +13,7 @@ async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
     const configService = app.get(ConfigService);
     const logger = new Logger('Bootstrap');
+    const expressApp = app.getHttpAdapter().getInstance();
 
     // Security
     app.use(helmet());
@@ -26,6 +27,11 @@ async function bootstrap() {
 
     // Global prefix
     app.setGlobalPrefix('api');
+
+    // Ensure Prisma BigInt fields can be returned safely in JSON responses.
+    expressApp.set('json replacer', (_key: string, value: unknown) =>
+        typeof value === 'bigint' ? value.toString() : value,
+    );
 
     // Validation
     app.useGlobalPipes(

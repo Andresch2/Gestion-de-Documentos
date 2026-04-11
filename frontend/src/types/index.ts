@@ -75,6 +75,33 @@ export interface Notification {
     createdAt: string;
 }
 
+export type AuditAction =
+    | 'LOGIN'
+    | 'LOGOUT'
+    | 'REGISTER'
+    | 'UPLOAD'
+    | 'DOWNLOAD'
+    | 'DELETE'
+    | 'RESTORE'
+    | 'SHARE'
+    | 'REVOKE_SHARE'
+    | 'UPDATE';
+
+export interface AuditLog {
+    id: string;
+    userId: string;
+    documentId: string | null;
+    action: AuditAction;
+    ipAddress: string | null;
+    userAgent: string | null;
+    metadata: Record<string, any> | null;
+    createdAt: string;
+    document: {
+        id: string;
+        name: string;
+    } | null;
+}
+
 export interface SharedLink {
     id: string;
     documentId: string;

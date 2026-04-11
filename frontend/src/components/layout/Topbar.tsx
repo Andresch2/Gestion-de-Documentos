@@ -1,70 +1,121 @@
-import { useNotifications, useReadAllNotifications, useReadNotification } from '@/hooks/useNotifications';
+﻿import { useNotifications, useReadAllNotifications, useReadNotification } from '@/hooks/useNotifications';
 import { formatDate } from '@/lib/utils';
-import { Bell } from 'lucide-react';
+import { Bell, Plus, Search, Upload } from 'lucide-react';
 import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+const titleByPath: Record<string, string> = {
+    '/': 'Mis Documentos',
+    '/search': 'Busqueda',
+    '/expiring': 'Por vencer',
+    '/shared': 'Compartidos',
+    '/trash': 'Papelera',
+    '/notifications': 'Notificaciones',
+    '/activity': 'Actividad',
+    '/settings': 'Configuracion',
+};
 
 export function Topbar() {
     const [showNotifications, setShowNotifications] = useState(false);
+    const location = useLocation();
+    const navigate = useNavigate();
     const { data: notificationsData } = useNotifications();
     const readAll = useReadAllNotifications();
     const readOne = useReadNotification();
 
     const unreadCount = notificationsData?.unreadCount || 0;
     const notifications = notificationsData?.data || [];
+    const title = titleByPath[location.pathname] || 'GestorDoc';
+
+    const openUpload = () => {
+        if (location.pathname === '/') {
+            window.dispatchEvent(new CustomEvent('open-upload-modal'));
+            return;
+        }
+        navigate('/?openUpload=1');
+    };
 
     return (
-        <header className="h-16 border-b border-border flex items-center justify-end px-6 bg-card/30">
-            {/* Notifications */}
-            <div className="relative">
-                <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
-                    <Bell className="w-5 h-5" />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-medium animate-pulse">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </button>
+        <header className="flex h-[70px] items-center gap-5 border-b border-slate-200/90 bg-white px-6">
+            <h1 className="whitespace-nowrap text-[20px] font-extrabold tracking-tight text-slate-900">{title}</h1>
 
-                {showNotifications && (
-                    <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                        <div className="absolute right-0 top-12 w-80 max-h-96 overflow-y-auto glass rounded-xl shadow-2xl z-50 animate-fade-in">
-                            <div className="flex items-center justify-between p-4 border-b border-border">
-                                <h3 className="font-semibold text-sm">Notificaciones</h3>
-                                {unreadCount > 0 && (
-                                    <button
-                                        onClick={() => readAll.mutate()}
-                                        className="text-xs text-blue-400 hover:text-blue-300 font-medium"
-                                    >
-                                        Marcar todas como leídas
-                                    </button>
-                                )}
-                            </div>
-                            <div className="divide-y divide-border">
-                                {notifications.length === 0 ? (
-                                    <p className="p-4 text-sm text-muted-foreground text-center">Sin notificaciones</p>
-                                ) : (
-                                    notifications.slice(0, 10).map((n: any) => (
-                                        <div
-                                            key={n.id}
-                                            className={`p-3 hover:bg-accent/50 cursor-pointer transition-colors ${!n.isRead ? 'bg-blue-500/5' : ''
-                                                }`}
-                                            onClick={() => {
-                                                if (!n.isRead) readOne.mutate(n.id);
-                                            }}
+            <div className="relative w-full max-w-[380px]">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                    placeholder="Buscar documentos..."
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100/90 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+            </div>
+
+            <div className="ml-auto flex items-center gap-3">
+                <div className="relative">
+                    <button
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                    >
+                        <Bell className="w-5 h-5" />
+                        {unreadCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />}
+                    </button>
+
+                    {showNotifications && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                            <div className="absolute right-0 top-11 z-50 max-h-[420px] w-[340px] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl animate-fade-in">
+                                <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                                    <h3 className="font-semibold text-sm text-slate-800">Notificaciones</h3>
+                                    <div className="flex items-center gap-2">
+                                        {unreadCount > 0 && (
+                                            <button
+                                                onClick={() => readAll.mutate()}
+                                                className="text-xs text-blue-600 hover:text-blue-500 font-medium"
+                                            >
+                                                Marcar leidas
+                                            </button>
+                                        )}
+                                        <Link
+                                            to="/notifications"
+                                            onClick={() => setShowNotifications(false)}
+                                            className="text-xs text-slate-500 hover:text-slate-700"
                                         >
-                                            <p className="text-sm text-foreground">{n.message}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">{formatDate(n.createdAt)}</p>
-                                        </div>
-                                    ))
-                                )}
+                                            Ver panel
+                                        </Link>
+                                    </div>
+                                </div>
+                                <div className="divide-y divide-slate-200">
+                                    {notifications.length === 0 ? (
+                                        <p className="p-4 text-sm text-slate-500 text-center">Sin notificaciones</p>
+                                    ) : (
+                                        notifications.slice(0, 10).map((n: any) => (
+                                            <div
+                                                key={n.id}
+                                                className={`p-3 hover:bg-slate-50 cursor-pointer transition-colors ${!n.isRead ? 'bg-blue-50/50' : ''}`}
+                                                onClick={() => {
+                                                    if (!n.isRead) readOne.mutate(n.id);
+                                                }}
+                                            >
+                                                <p className="text-sm text-slate-800">{n.message}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{formatDate(n.createdAt)}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
+
+                <button
+                    onClick={openUpload}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                    <Upload className="w-4 h-4" /> Subir
+                </button>
+                <button
+                    onClick={openUpload}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                >
+                    <Plus className="w-4 h-4" /> Nuevo
+                </button>
             </div>
         </header>
     );

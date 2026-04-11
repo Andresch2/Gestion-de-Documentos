@@ -1,118 +1,212 @@
-import { usersApi } from '@/api/notifications.api';
+import { usersApi } from '@/api/users.api';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
-import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { Activity, AlertTriangle, Bell, Briefcase, Camera, Car, Check, CreditCard, Download, FileText, Files, Fingerprint, Folder, FolderOpen, Globe, GraduationCap, HardDrive, Heart, Music, Pencil, Plane, Plus, Receipt, Scale, Settings, Shield, ShoppingBag, Trophy, Trash2, User, Utensils, X, Zap } from 'lucide-react';
-import { useState } from 'react';
+import type { Category, User } from '@/types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, Bell, Download, FolderOpen, HardDrive, Pencil, Plus, Settings, Shield, Trash2, User as UserIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+type SettingsTab = 'profile' | 'categories' | 'security' | 'notifications' | 'storage';
+
+const categoryIcons = [
+    'Folder',
+    'Receipt',
+    'Briefcase',
+    'Shield',
+    'Heart',
+    'Car',
+    'Scale',
+    'GraduationCap',
+    'Home',
+];
+
+const tabs: Array<{ id: SettingsTab; label: string; icon: typeof UserIcon }> = [
+    { id: 'profile', label: 'Perfil', icon: UserIcon },
+    { id: 'categories', label: 'Categorias', icon: FolderOpen },
+    { id: 'security', label: 'Seguridad', icon: Shield },
+    { id: 'notifications', label: 'Notificaciones', icon: Bell },
+    { id: 'storage', label: 'Almacenamiento', icon: HardDrive },
+];
+
+function extractErrorMessage(err: any, fallback: string) {
+    const message = err?.response?.data?.message;
+    if (Array.isArray(message)) return message.join(', ');
+    return message || fallback;
+}
 
 export function SettingsPage() {
-    const user = useAuthStore((s) => s.user);
-    const updateUser = useAuthStore((s) => s.updateUser);
-    const [activeTab, setActiveTab] = useState('profile');
+    const storedUser = useAuthStore((state) => state.user);
+    const updateUser = useAuthStore((state) => state.updateUser);
+    const queryClient = useQueryClient();
 
-    // Profile state
-    const [name, setName] = useState(user?.name || '');
-    const [email, setEmail] = useState(user?.email || '');
+    const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+    const [name, setName] = useState(storedUser?.name || '');
+    const [email, setEmail] = useState(storedUser?.email || '');
     const [profileMsg, setProfileMsg] = useState('');
     const [profileLoading, setProfileLoading] = useState(false);
 
-    // Password state
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [passwordLoading, setPasswordLoading] = useState(false);
 
-    // Notification prefs
     const [emailExpiry, setEmailExpiry] = useState(() => localStorage.getItem('notif-expiry') !== 'false');
     const [emailUpload, setEmailUpload] = useState(() => localStorage.getItem('notif-upload') !== 'false');
     const [emailShare, setEmailShare] = useState(() => localStorage.getItem('notif-share') !== 'false');
-
-    // Categories state
-    const { data: categories, isLoading: categoriesLoading } = useCategories();
-    const createCategory = useCreateCategory();
-    const updateCategory = useUpdateCategory();
-    const deleteCategory = useDeleteCategory();
 
     const [editingCatId, setEditingCatId] = useState<string | null>(null);
     const [catName, setCatName] = useState('');
     const [catColor, setCatColor] = useState('#4f8ef7');
     const [catIcon, setCatIcon] = useState('Folder');
     const [isAdding, setIsAdding] = useState(false);
+    const [categoryMsg, setCategoryMsg] = useState('');
 
-    const availableIcons = [
-        'Folder', 'Files', 'FileText', 'Fingerprint', 'Receipt', 'CreditCard',
-        'Activity', 'Heart', 'Shield', 'Zap', 'Scale', 'Briefcase', 'GraduationCap',
-        'Home', 'Car', 'Plane', 'ShoppingBag', 'Utensils', 'Camera', 'Globe', 'Trophy', 'Music'
-    ];
+    const { data: me } = useQuery({
+        queryKey: ['users', 'me'],
+        queryFn: async () => {
+            const { data } = await usersApi.getMe();
+            return (data.data || data) as User;
+        },
+    });
+
+    const { data: categories, isLoading: categoriesLoading } = useCategories();
+    const createCategory = useCreateCategory();
+    const updateCategory = useUpdateCategory();
+    const deleteCategory = useDeleteCategory();
+
+    useEffect(() => {
+        if (!me) return;
+        updateUser({
+            name: me.name,
+            email: me.email,
+            storageUsedBytes: me.storageUsedBytes,
+            storageQuotaBytes: me.storageQuotaBytes,
+        });
+        setName(me.name || '');
+        setEmail(me.email || '');
+    }, [me, updateUser]);
+
+    const currentUser = me || storedUser;
+    const usedBytes = Number(currentUser?.storageUsedBytes || 0);
+    const quotaBytes = Number(currentUser?.storageQuotaBytes || 1073741824);
+    const usagePercent = quotaBytes > 0 ? Math.min(100, (usedBytes / quotaBytes) * 100) : 0;
+
+    const resetCategoryForm = () => {
+        setEditingCatId(null);
+        setIsAdding(false);
+        setCatName('');
+        setCatColor('#4f8ef7');
+        setCatIcon('Folder');
+        setCategoryMsg('');
+    };
 
     const handleSaveProfile = async () => {
         setProfileLoading(true);
+        setProfileMsg('');
+
         try {
-            const { data } = await usersApi.updateMe({ name, email });
-            const result = data.data || data;
-            updateUser({ name: result.name, email: result.email });
-            setProfileMsg('Perfil actualizado exitosamente');
-            setTimeout(() => setProfileMsg(''), 3000);
-        } catch (err: any) {
-            setProfileMsg(err.response?.data?.message || 'Error al actualizar');
+            const { data } = await usersApi.updateMe({ name: name.trim(), email: email.trim() });
+            const result = (data.data || data) as User;
+            updateUser({
+                name: result.name,
+                email: result.email,
+                storageUsedBytes: result.storageUsedBytes,
+                storageQuotaBytes: result.storageQuotaBytes,
+            });
+            await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            setProfileMsg('Perfil actualizado correctamente');
+        } catch (err) {
+            setProfileMsg(extractErrorMessage(err, 'No se pudo actualizar el perfil'));
         } finally {
             setProfileLoading(false);
         }
     };
 
     const handleChangePassword = async () => {
+        setPasswordMsg('');
+
         if (newPassword !== confirmNewPassword) {
-            setPasswordMsg('Las contraseñas no coinciden');
+            setPasswordMsg('Las contrasenas no coinciden');
             return;
         }
+
         setPasswordLoading(true);
         try {
             await usersApi.changePassword({ currentPassword, newPassword });
-            setPasswordMsg('Contraseña actualizada');
-            setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword('');
-            setTimeout(() => setPasswordMsg(''), 3000);
-        } catch (err: any) {
-            setPasswordMsg(err.response?.data?.message || 'Error al cambiar contraseña');
+            setPasswordMsg('Contrasena actualizada correctamente');
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+        } catch (err) {
+            setPasswordMsg(extractErrorMessage(err, 'No se pudo cambiar la contrasena'));
         } finally {
             setPasswordLoading(false);
         }
     };
 
     const handleCreateCategory = async () => {
-        if (!catName) return;
+        if (!catName.trim()) return;
+        setCategoryMsg('');
+
         try {
-            await createCategory.mutateAsync({ name: catName, color: catColor, icon: catIcon });
-            setCatName('');
-            setIsAdding(false);
+            await createCategory.mutateAsync({
+                name: catName.trim(),
+                color: catColor,
+                icon: catIcon,
+            });
+            resetCategoryForm();
         } catch (err) {
-            console.error('Failed to create category:', err);
+            setCategoryMsg(extractErrorMessage(err, 'No se pudo crear la categoria'));
         }
     };
 
     const handleUpdateCategory = async (id: string) => {
-        if (!catName) return;
+        if (!catName.trim()) return;
+        setCategoryMsg('');
+
         try {
-            await updateCategory.mutateAsync({ id, data: { name: catName, color: catColor, icon: catIcon } });
-            setEditingCatId(null);
-            setCatName('');
+            await updateCategory.mutateAsync({
+                id,
+                data: {
+                    name: catName.trim(),
+                    color: catColor,
+                    icon: catIcon,
+                },
+            });
+            resetCategoryForm();
         } catch (err) {
-            console.error('Failed to update category:', err);
+            setCategoryMsg(extractErrorMessage(err, 'No se pudo actualizar la categoria'));
         }
     };
 
-    const startEdit = (cat: any) => {
-        setEditingCatId(cat.id);
-        setCatName(cat.name);
-        setCatColor(cat.color);
-        setCatIcon(cat.icon);
+    const handleDeleteCategory = async (category: Category) => {
+        if (!confirm(`Eliminar la categoria "${category.name}"?`)) return;
+        try {
+            await deleteCategory.mutateAsync(category.id);
+        } catch (err) {
+            setCategoryMsg(extractErrorMessage(err, 'No se pudo eliminar la categoria'));
+        }
     };
 
-    const cancelEdit = () => {
+    const startEdit = (category: Category) => {
+        setEditingCatId(category.id);
+        setIsAdding(false);
+        setCatName(category.name);
+        setCatColor(category.color);
+        setCatIcon(category.icon || 'Folder');
+        setCategoryMsg('');
+    };
+
+    const startCreate = () => {
+        setIsAdding(true);
         setEditingCatId(null);
         setCatName('');
-        setIsAdding(false);
+        setCatColor('#4f8ef7');
+        setCatIcon('Folder');
+        setCategoryMsg('');
     };
 
     const handleExport = async () => {
@@ -120,316 +214,363 @@ export function SettingsPage() {
             const { data } = await usersApi.exportData();
             const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `gestordoc-export-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gestordoc-export-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Export failed:', err);
         }
     };
 
-    const tabs = [
-        { id: 'profile', label: 'Perfil', icon: User },
-        { id: 'categories', label: 'Categorías', icon: FolderOpen },
-        { id: 'security', label: 'Seguridad', icon: Shield },
-        { id: 'notifications', label: 'Notificaciones', icon: Bell },
-        { id: 'storage', label: 'Almacenamiento', icon: HardDrive },
-    ];
+    const savePreference = (key: string, value: boolean, setter: (value: boolean) => void) => {
+        setter(value);
+        localStorage.setItem(key, String(value));
+    };
 
-    const usedBytes = parseInt(user?.storageUsedBytes || '0', 10);
-    const quotaBytes = parseInt(user?.storageQuotaBytes || '1073741824', 10);
-    const usagePercent = quotaBytes > 0 ? (usedBytes / quotaBytes) * 100 : 0;
+    const panelClass = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm';
+    const inputClass =
+        'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300';
 
     return (
-        <div className="space-y-6 max-w-3xl">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Settings className="w-6 h-6" /> Configuración
-            </h1>
+        <div className="mx-auto max-w-[1080px] space-y-5">
+            <div>
+                <h1 className="flex items-center gap-2.5 text-[1.9rem] font-bold tracking-tight text-slate-900">
+                    <Settings className="h-6 w-6 text-slate-400" />
+                    Configuracion
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">Administra tu perfil, categorias, seguridad y preferencias.</p>
+            </div>
 
-            {/* Tab bar */}
-            <div className="flex gap-1 rounded-lg bg-card/50 p-1 border border-border">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-500/15 text-blue-400' : 'text-muted-foreground hover:text-foreground'
+                        className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                             }`}
                     >
-                        <tab.icon className="w-4 h-4" /> {tab.label}
+                        <tab.icon className="h-4 w-4" />
+                        {tab.label}
                     </button>
                 ))}
             </div>
 
-            {/* Profile */}
             {activeTab === 'profile' && (
-                <div className="p-6 rounded-xl border border-border bg-card/50 space-y-4">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                            {user?.name?.charAt(0).toUpperCase() || 'U'}
+                <div className={panelClass}>
+                    <div className="mb-5 flex items-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xl font-bold text-white">
+                            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold">{user?.name}</h2>
-                            <p className="text-sm text-muted-foreground">{user?.email}</p>
+                            <h2 className="text-lg font-semibold text-slate-900">{currentUser?.name || 'Usuario'}</h2>
+                            <p className="text-sm text-slate-500">{currentUser?.email || 'Sin correo'}</p>
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-1.5">Nombre</label>
-                        <input value={name} onChange={(e) => setName(e.target.value)}
-                            className="w-full px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1.5">Email</label>
-                        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email"
-                            className="w-full px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                    <div className="space-y-4">
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
+                            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} />
+                        </div>
                     </div>
 
-                    {profileMsg && <p className={`text-sm ${profileMsg.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>{profileMsg}</p>}
+                    {profileMsg && (
+                        <p className={`mt-4 text-sm font-medium ${profileMsg.toLowerCase().includes('no se pudo') || profileMsg.toLowerCase().includes('error')
+                            ? 'text-red-600'
+                            : 'text-emerald-600'
+                            }`}>
+                            {profileMsg}
+                        </p>
+                    )}
 
-                    <button onClick={handleSaveProfile} disabled={profileLoading}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium text-sm hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all">
-                        {profileLoading ? 'Guardando...' : 'Guardar Cambios'}
+                    <button
+                        onClick={handleSaveProfile}
+                        disabled={profileLoading}
+                        className="mt-5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {profileLoading ? 'Guardando...' : 'Guardar cambios'}
                     </button>
                 </div>
             )}
 
-            {/* Categories */}
             {activeTab === 'categories' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Tus Categorías</h2>
-                        {!isAdding && (
+                        <h2 className="text-lg font-semibold text-slate-900">Tus categorias</h2>
+                        {!isAdding && !editingCatId && (
                             <button
-                                onClick={() => { setIsAdding(true); setCatName(''); setCatColor('#4f8ef7'); setCatIcon('Folder'); }}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-sm font-medium transition-colors"
+                                onClick={startCreate}
+                                className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
                             >
-                                <Plus className="w-4 h-4" /> Nueva Categoría
+                                <Plus className="h-4 w-4" />
+                                Nueva categoria
                             </button>
                         )}
                     </div>
 
                     {(isAdding || editingCatId) && (
-                        <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <h3 className="text-sm font-medium">{isAdding ? 'Crear Nueva Categoría' : 'Editar Categoría'}</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="sm:col-span-1">
-                                    <label className="block text-xs text-muted-foreground mb-1">Nombre</label>
+                        <div className={`${panelClass} space-y-4`}>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-base font-semibold text-slate-900">{isAdding ? 'Crear categoria' : 'Editar categoria'}</h3>
+                                <button onClick={resetCategoryForm} className="text-sm font-medium text-slate-500 hover:text-slate-700">
+                                    Cancelar
+                                </button>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-[1fr_180px]">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
                                     <input
                                         value={catName}
                                         onChange={(e) => setCatName(e.target.value)}
-                                        placeholder="Ej: Finanzas"
-                                        className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                        placeholder="Ej: Impuestos"
+                                        className={inputClass}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-muted-foreground mb-1">Color</label>
-                                    <div className="flex items-center gap-2">
+                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Color</label>
+                                    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                                         <input
                                             type="color"
                                             value={catColor}
                                             onChange={(e) => setCatColor(e.target.value)}
-                                            className="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer"
+                                            className="h-9 w-11 cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
                                         />
-                                        <span className="text-xs font-mono text-muted-foreground uppercase">{catColor}</span>
-                                    </div>
-                                </div>
-                                <div className="sm:col-span-3">
-                                    <label className="block text-xs text-muted-foreground mb-2">Seleccionar Icono Profesional</label>
-                                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-2 p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        {availableIcons.map((iconName) => (
-                                            <button
-                                                key={iconName}
-                                                type="button"
-                                                onClick={() => setCatIcon(iconName)}
-                                                className={`p-2 rounded-md transition-all flex items-center justify-center ${catIcon === iconName ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' : 'bg-slate-800 text-muted-foreground hover:text-white hover:bg-slate-700'}`}
-                                                title={iconName}
-                                            >
-                                                <CategoryIcon name={iconName} className="w-4 h-4" />
-                                            </button>
-                                        ))}
+                                        <span className="text-sm font-medium text-slate-600">{catColor}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex justify-end gap-2">
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Icono</label>
+                                <div className="grid grid-cols-5 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-9">
+                                    {categoryIcons.map((iconName) => (
+                                        <button
+                                            key={iconName}
+                                            type="button"
+                                            onClick={() => setCatIcon(iconName)}
+                                            className={`flex h-10 items-center justify-center rounded-xl border transition-colors ${catIcon === iconName
+                                                ? 'border-blue-300 bg-blue-50 text-blue-700'
+                                                : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                                                }`}
+                                        >
+                                            <CategoryIcon name={iconName} className="h-4 w-4" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {categoryMsg && (
+                                <p className={`text-sm font-medium ${categoryMsg.toLowerCase().includes('no se pudo') || categoryMsg.toLowerCase().includes('ya existe')
+                                    ? 'text-red-600'
+                                    : 'text-emerald-600'
+                                    }`}>
+                                    {categoryMsg}
+                                </p>
+                            )}
+
+                            <div className="flex justify-end">
                                 <button
-                                    onClick={cancelEdit}
-                                    className="px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-accent transition-colors"
+                                    onClick={() => (isAdding ? handleCreateCategory() : handleUpdateCategory(editingCatId!))}
+                                    disabled={!catName.trim()}
+                                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={() => isAdding ? handleCreateCategory() : handleUpdateCategory(editingCatId!)}
-                                    disabled={!catName}
-                                    className="px-4 py-1.5 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
-                                >
-                                    {isAdding ? 'Crear' : 'Guardar'}
+                                    {isAdding ? 'Crear categoria' : 'Guardar cambios'}
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid gap-3 md:grid-cols-2">
                         {categoriesLoading ? (
-                            [...Array(4)].map((_, i) => (
-                                <div key={i} className="h-16 rounded-xl border border-border bg-card/50 animate-pulse" />
+                            [...Array(4)].map((_, index) => (
+                                <div key={index} className="h-20 rounded-2xl border border-slate-200 bg-white animate-pulse" />
                             ))
-                        ) : categories?.length === 0 ? (
-                            <div className="sm:col-span-2 text-center py-8 text-muted-foreground">
-                                <p>No has creado categorías personalizadas todavía.</p>
-                            </div>
-                        ) : (
-                            categories?.map((cat) => (
-                                <div
-                                    key={cat.id}
-                                    className="p-3 rounded-xl border border-border bg-card/50 flex items-center justify-between group hover:border-blue-500/30 transition-all"
-                                >
+                        ) : categories?.length ? (
+                            categories.map((category) => (
+                                <div key={category.id} className={`${panelClass} flex items-center justify-between`}>
                                     <div className="flex items-center gap-3">
-                                            <div
-                                                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-                                                style={{ backgroundColor: `${cat.color}20`, border: `1px solid ${cat.color}40`, color: cat.color }}
-                                            >
-                                                <CategoryIcon name={cat.icon} className="w-5 h-5" />
-                                            </div>
+                                        <div
+                                            className="flex h-11 w-11 items-center justify-center rounded-2xl border"
+                                            style={{
+                                                backgroundColor: `${category.color}18`,
+                                                color: category.color,
+                                                borderColor: `${category.color}40`,
+                                            }}
+                                        >
+                                            <CategoryIcon name={category.icon || 'Folder'} className="h-5 w-5" />
+                                        </div>
                                         <div>
-                                            <p className="text-sm font-medium">{cat.name}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {cat._count?.documents || 0} documentos
-                                            </p>
+                                            <p className="text-[15px] font-semibold text-slate-900">{category.name}</p>
+                                            <p className="text-sm text-slate-500">{category._count?.documents || 0} documentos</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => startEdit(cat)}
-                                            className="p-1.5 rounded-md hover:bg-blue-500/10 text-blue-400 transition-colors"
+                                            onClick={() => startEdit(category)}
+                                            className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
                                             title="Editar"
                                         >
-                                            <Pencil className="w-4 h-4" />
+                                            <Pencil className="h-4 w-4" />
                                         </button>
                                         <button
-                                            onClick={() => { if (confirm('¿Eliminar esta categoría?')) deleteCategory.mutate(cat.id); }}
-                                            className="p-1.5 rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
+                                            onClick={() => handleDeleteCategory(category)}
+                                            className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600"
                                             title="Eliminar"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
                                 </div>
                             ))
+                        ) : (
+                            <div className={`${panelClass} md:col-span-2 text-center`}>
+                                <p className="text-sm text-slate-500">No tienes categorias personalizadas todavia.</p>
+                            </div>
                         )}
                     </div>
                 </div>
             )}
 
-            {/* Security */}
             {activeTab === 'security' && (
-                <div className="p-6 rounded-xl border border-border bg-card/50 space-y-4">
-                    <h2 className="text-lg font-semibold">Cambiar Contraseña</h2>
-                    <div>
-                        <label className="block text-sm font-medium mb-1.5">Contraseña actual</label>
-                        <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password"
-                            className="w-full px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1.5">Nueva contraseña</label>
-                        <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password"
-                            className="w-full px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1.5">Confirmar nueva contraseña</label>
-                        <input value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} type="password"
-                            className="w-full px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-                    </div>
-
-                    {passwordMsg && <p className={`text-sm ${passwordMsg.includes('Error') || passwordMsg.includes('coinciden') ? 'text-red-400' : 'text-green-400'}`}>{passwordMsg}</p>}
-
-                    <button onClick={handleChangePassword} disabled={passwordLoading}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium text-sm hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all">
-                        {passwordLoading ? 'Actualizando...' : 'Cambiar Contraseña'}
-                    </button>
-
-                    <div className="mt-6 p-4 rounded-lg bg-accent/30 border border-border">
-                        <h3 className="text-sm font-medium flex items-center gap-2 mb-2">
-                            <Shield className="w-4 h-4 text-blue-400" /> Autenticación de dos factores
-                        </h3>
-                        <p className="text-xs text-muted-foreground">Próximamente disponible</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Notifications */}
-            {activeTab === 'notifications' && (
-                <div className="p-6 rounded-xl border border-border bg-card/50 space-y-4">
-                    <h2 className="text-lg font-semibold">Preferencias de Notificación</h2>
-
-                    {[
-                        { label: 'Vencimiento de documentos', desc: 'Recibir alertas cuando tus documentos estén por vencer', state: emailExpiry, key: 'notif-expiry', setter: setEmailExpiry },
-                        { label: 'Subida exitosa', desc: 'Notificar cuando se suba un documento correctamente', state: emailUpload, key: 'notif-upload', setter: setEmailUpload },
-                        { label: 'Acceso a links compartidos', desc: 'Notificar cuando alguien acceda a un link compartido', state: emailShare, key: 'notif-share', setter: setEmailShare },
-                    ].map((item) => (
-                        <label key={item.key} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/30 cursor-pointer transition-colors">
-                            <div>
-                                <p className="text-sm font-medium">{item.label}</p>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={item.state}
-                                onChange={(e) => {
-                                    item.setter(e.target.checked);
-                                    localStorage.setItem(item.key, String(e.target.checked));
-                                }}
-                                className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/50"
-                            />
-                        </label>
-                    ))}
-                </div>
-            )}
-
-            {/* Storage */}
-            {activeTab === 'storage' && (
-                <div className="space-y-4">
-                    <div className="p-6 rounded-xl border border-border bg-card/50 space-y-4">
-                        <h2 className="text-lg font-semibold">Uso de Almacenamiento</h2>
+                <div className={panelClass}>
+                    <h2 className="text-lg font-semibold text-slate-900">Cambiar contrasena</h2>
+                    <div className="mt-5 space-y-4">
                         <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span>{formatBytes(usedBytes)} usado</span>
-                                <span>{formatBytes(quotaBytes)} total</span>
-                            </div>
-                            <div className="w-full h-3 rounded-full bg-slate-700 overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`}
-                                    style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{usagePercent.toFixed(1)}% utilizado</p>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Contrasena actual</label>
+                            <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password" className={inputClass} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Nueva contrasena</label>
+                            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" className={inputClass} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Confirmar nueva contrasena</label>
+                            <input value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} type="password" className={inputClass} />
                         </div>
                     </div>
 
-                    <div className="p-6 rounded-xl border border-border bg-card/50 space-y-3">
-                        <h2 className="text-lg font-semibold">Exportar Datos</h2>
-                        <p className="text-sm text-muted-foreground">Descarga todos tus metadatos de documentos en formato JSON</p>
-                        <button onClick={handleExport}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-sm font-medium transition-colors">
-                            <Download className="w-4 h-4" /> Exportar Datos
+                    {passwordMsg && (
+                        <p className={`mt-4 text-sm font-medium ${passwordMsg.toLowerCase().includes('correctamente')
+                            ? 'text-emerald-600'
+                            : 'text-red-600'
+                            }`}>
+                            {passwordMsg}
+                        </p>
+                    )}
+
+                    <button
+                        onClick={handleChangePassword}
+                        disabled={passwordLoading}
+                        className="mt-5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {passwordLoading ? 'Actualizando...' : 'Cambiar contrasena'}
+                    </button>
+
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <div className="flex items-center gap-2 text-slate-800">
+                            <Shield className="h-4 w-4 text-blue-600" />
+                            <p className="text-sm font-semibold">Autenticacion de dos factores</p>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-500">Proximamente disponible.</p>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'notifications' && (
+                <div className={panelClass}>
+                    <h2 className="text-lg font-semibold text-slate-900">Preferencias de notificacion</h2>
+                    <div className="mt-5 space-y-3">
+                        {[
+                            {
+                                key: 'notif-expiry',
+                                label: 'Vencimiento de documentos',
+                                desc: 'Recibir alertas cuando tus documentos esten por vencer',
+                                value: emailExpiry,
+                                setter: setEmailExpiry,
+                            },
+                            {
+                                key: 'notif-upload',
+                                label: 'Subida exitosa',
+                                desc: 'Notificar cuando se suba un documento correctamente',
+                                value: emailUpload,
+                                setter: setEmailUpload,
+                            },
+                            {
+                                key: 'notif-share',
+                                label: 'Acceso a links compartidos',
+                                desc: 'Notificar cuando alguien acceda a un link compartido',
+                                value: emailShare,
+                                setter: setEmailShare,
+                            },
+                        ].map((item) => (
+                            <label key={item.key} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                <div className="pr-4">
+                                    <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                                    <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={item.value}
+                                    onChange={(e) => savePreference(item.key, e.target.checked, item.setter)}
+                                    className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
+                                />
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'storage' && (
+                <div className="space-y-4">
+                    <div className={panelClass}>
+                        <h2 className="text-lg font-semibold text-slate-900">Uso de almacenamiento</h2>
+                        <div className="mt-5">
+                            <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
+                                <span>{formatBytes(usedBytes)} usado</span>
+                                <span>{formatBytes(quotaBytes)} total</span>
+                            </div>
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div
+                                    className={`h-full rounded-full ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`}
+                                    style={{ width: `${usagePercent}%` }}
+                                />
+                            </div>
+                            <p className="mt-2 text-sm text-slate-500">{usagePercent.toFixed(1)}% utilizado</p>
+                        </div>
+                    </div>
+
+                    <div className={panelClass}>
+                        <h2 className="text-lg font-semibold text-slate-900">Exportar datos</h2>
+                        <p className="mt-2 text-sm text-slate-500">Descarga todos tus metadatos de documentos en formato JSON.</p>
+                        <button
+                            onClick={handleExport}
+                            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                        >
+                            <Download className="h-4 w-4" />
+                            Exportar datos
                         </button>
                     </div>
 
-                    <div className="p-6 rounded-xl border border-red-500/30 bg-red-500/5 space-y-3">
-                        <h2 className="text-lg font-semibold text-red-400 flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5" /> Zona de Peligro
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-red-600">
+                            <AlertTriangle className="h-5 w-5" />
+                            Zona de peligro
                         </h2>
-                        <p className="text-sm text-muted-foreground">Acciones irreversibles que afectan tu cuenta</p>
+                        <p className="mt-2 text-sm text-red-500">La eliminacion de cuenta aun no esta habilitada en esta version.</p>
                         <button
-                            onClick={() => {
-                                const confirm1 = prompt('Escribe "ELIMINAR" para confirmar');
-                                if (confirm1 !== 'ELIMINAR') return;
-                                alert('Función no implementada en MVP');
-                            }}
-                            className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm font-medium transition-colors"
+                            disabled
+                            className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-400 opacity-70"
                         >
-                            Eliminar Cuenta
+                            Eliminar cuenta
                         </button>
                     </div>
                 </div>

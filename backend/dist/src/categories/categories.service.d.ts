@@ -7,10 +7,10 @@ export declare class CategoriesService {
             documents: number;
         };
     } & {
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;
@@ -20,10 +20,10 @@ export declare class CategoriesService {
         color?: string;
         icon?: string;
     }): Promise<{
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;
@@ -33,10 +33,10 @@ export declare class CategoriesService {
         color?: string;
         icon?: string;
     }): Promise<{
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;

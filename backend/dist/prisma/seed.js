@@ -39,12 +39,12 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const prisma = new client_1.PrismaClient();
 async function main() {
-    console.log('🌱 Seeding database...');
+    console.log('[SEED] Seeding database...');
     const seedDir = path.join(process.cwd(), 'uploads', 'seed');
     fs.mkdirSync(seedDir, { recursive: true });
     const minimalPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF', 'utf-8');
     fs.writeFileSync(path.join(seedDir, 'placeholder.pdf'), minimalPdf);
-    console.log('📄 Placeholder PDF created');
+    console.log('[FILE] Placeholder PDF created');
     const passwordHash = await bcrypt.hash('Demo1234!', 12);
     const user = await prisma.user.upsert({
         where: { email: 'demo@gestordoc.app' },
@@ -56,13 +56,13 @@ async function main() {
             emailVerifiedAt: new Date(),
         },
     });
-    console.log(`👤 Demo user created: ${user.email}`);
+    console.log(`[USER] Demo user created: ${user.email}`);
     const categoryData = [
-        { name: 'Identidad', color: '#4f8ef7', icon: '🪪' },
-        { name: 'Finanzas', color: '#3ecf7a', icon: '💰' },
-        { name: 'Salud', color: '#f05252', icon: '🏥' },
-        { name: 'Legal', color: '#9b72f5', icon: '⚖️' },
-        { name: 'Propiedad', color: '#f57c42', icon: '🏠' },
+        { name: 'Identidad', color: '#4f8ef7', icon: 'Fingerprint' },
+        { name: 'Finanzas', color: '#3ecf7a', icon: 'Receipt' },
+        { name: 'Salud', color: '#f05252', icon: 'Activity' },
+        { name: 'Legal', color: '#9b72f5', icon: 'Scale' },
+        { name: 'Propiedad', color: '#f57c42', icon: 'Home' },
     ];
     const categories = [];
     for (const cat of categoryData) {
@@ -82,7 +82,7 @@ async function main() {
         });
         categories.push(category);
     }
-    console.log(`📁 ${categories.length} default categories created`);
+    console.log(`[CAT] ${categories.length} default categories created`);
     const documents = [
         {
             name: 'Pasaporte Colombia',
@@ -164,15 +164,15 @@ async function main() {
             },
         });
     }
-    console.log(`📑 ${documents.length} demo documents created`);
+    console.log(`[DOC] ${documents.length} demo documents created`);
     const totalSize = documents.reduce((acc, d) => acc + Number(d.fileSizeBytes), 0);
     await prisma.user.update({
         where: { id: user.id },
         data: { storageUsedBytes: BigInt(totalSize) },
     });
-    console.log('✅ Seeding completed!');
+    console.log('[DONE] Seeding completed!');
     console.log('');
-    console.log('📧 Demo credentials:');
+    console.log(' [Login] Demo credentials:');
     console.log('   Email: demo@gestordoc.app');
     console.log('   Password: Demo1234!');
 }

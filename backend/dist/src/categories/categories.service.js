@@ -32,30 +32,67 @@ let CategoriesService = class CategoriesService {
         });
     }
     async create(userId, data) {
+        const name = data.name?.trim();
+        if (!name)
+            throw new common_1.BadRequestException('El nombre de la categoria es obligatorio');
+        const exists = await this.prisma.category.findFirst({
+            where: {
+                userId,
+                name: {
+                    equals: name,
+                    mode: 'insensitive',
+                },
+            },
+        });
+        if (exists) {
+            throw new common_1.ConflictException('Ya existe una categoria con ese nombre');
+        }
         return this.prisma.category.create({
             data: {
                 userId,
-                name: data.name,
+                name,
                 color: data.color || '#4f8ef7',
-                icon: data.icon || '📁',
+                icon: data.icon || 'Folder',
             },
         });
     }
     async update(id, userId, data) {
         const category = await this.prisma.category.findUnique({ where: { id } });
         if (!category)
-            throw new common_1.NotFoundException('Categoría no encontrada');
+            throw new common_1.NotFoundException('Categoria no encontrada');
         if (category.userId !== userId)
             throw new common_1.ForbiddenException();
+        const name = data.name?.trim();
+        if (data.name !== undefined && !name) {
+            throw new common_1.BadRequestException('El nombre de la categoria es obligatorio');
+        }
+        if (name && name.toLowerCase() !== category.name.toLowerCase()) {
+            const exists = await this.prisma.category.findFirst({
+                where: {
+                    userId,
+                    name: {
+                        equals: name,
+                        mode: 'insensitive',
+                    },
+                    NOT: { id },
+                },
+            });
+            if (exists) {
+                throw new common_1.ConflictException('Ya existe una categoria con ese nombre');
+            }
+        }
         return this.prisma.category.update({
             where: { id },
-            data,
+            data: {
+                ...data,
+                name: name ?? data.name,
+            },
         });
     }
     async delete(id, userId) {
         const category = await this.prisma.category.findUnique({ where: { id } });
         if (!category)
-            throw new common_1.NotFoundException('Categoría no encontrada');
+            throw new common_1.NotFoundException('Categoria no encontrada');
         if (category.userId !== userId)
             throw new common_1.ForbiddenException();
         await this.prisma.document.updateMany({
@@ -63,7 +100,7 @@ let CategoriesService = class CategoriesService {
             data: { categoryId: null },
         });
         await this.prisma.category.delete({ where: { id } });
-        return { message: 'Categoría eliminada' };
+        return { message: 'Categoria eliminada' };
     }
 };
 exports.CategoriesService = CategoriesService;

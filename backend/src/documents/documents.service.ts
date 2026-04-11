@@ -58,11 +58,6 @@ export class DocumentsService {
         const orderBy: any = {};
         orderBy[sortBy || 'createdAt'] = sortOrder || 'desc';
 
-        console.log('--- FIND_ALL QUERY LOGS ---');
-        console.log('User ID:', userId);
-        console.log('Query Input Params:', query);
-        console.log('Constructed Where Filter:', JSON.stringify(where, null, 2));
-
         const [data, total] = await Promise.all([
             this.prisma.document.findMany({
                 where,
@@ -76,10 +71,6 @@ export class DocumentsService {
             }),
             this.prisma.document.count({ where }),
         ]);
-
-        console.log('Prisma Found Data Length:', data.length);
-        console.log('Prisma Count Total:', total);
-        console.log('---------------------------');
 
         return {
             data: data.map((d) => ({

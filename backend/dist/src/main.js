@@ -16,6 +16,7 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const logger = new common_1.Logger('Bootstrap');
+    const expressApp = app.getHttpAdapter().getInstance();
     app.use((0, helmet_1.default)());
     app.use((0, cookie_parser_1.default)());
     app.enableCors({
@@ -23,6 +24,7 @@ async function bootstrap() {
         credentials: true,
     });
     app.setGlobalPrefix('api');
+    expressApp.set('json replacer', (_key, value) => typeof value === 'bigint' ? value.toString() : value);
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

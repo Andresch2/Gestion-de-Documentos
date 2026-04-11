@@ -14,25 +14,25 @@ export declare class DocumentsController {
         data: {
             fileSizeBytes: string;
             tags: {
+                name: string;
                 id: string;
                 userId: string;
-                name: string;
             }[];
             category: {
-                id: string;
-                createdAt: Date;
-                userId: string;
                 name: string;
+                id: string;
+                userId: string;
+                createdAt: Date;
                 color: string;
                 icon: string;
                 isDefault: boolean;
             } | null;
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
             description: string | null;
-            updatedAt: Date;
+            id: string;
+            userId: string;
+            createdAt: Date;
+            categoryId: string | null;
             fileKey: string;
             mimeType: string;
             originalName: string;
@@ -43,7 +43,7 @@ export declare class DocumentsController {
             isDeleted: boolean;
             deletedAt: Date | null;
             scanStatus: import(".prisma/client").$Enums.ScanStatus;
-            categoryId: string | null;
+            updatedAt: Date;
         }[];
         meta: {
             page: number;
@@ -61,25 +61,25 @@ export declare class DocumentsController {
     findExpiring(userId: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -90,30 +90,30 @@ export declare class DocumentsController {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }[]>;
     create(userId: string, dto: CreateDocumentDto, file: Express.Multer.File, req: Request): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -124,30 +124,30 @@ export declare class DocumentsController {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     findOne(id: string, userId: string): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -158,31 +158,31 @@ export declare class DocumentsController {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     download(id: string, userId: string, req: Request, res: Response): Promise<void>;
     update(id: string, userId: string, dto: UpdateDocumentDto, req: Request): Promise<{
         fileSizeBytes: string;
         tags: {
+            name: string;
             id: string;
             userId: string;
-            name: string;
         }[];
         category: {
-            id: string;
-            createdAt: Date;
-            userId: string;
             name: string;
+            id: string;
+            userId: string;
+            createdAt: Date;
             color: string;
             icon: string;
             isDefault: boolean;
         } | null;
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
         description: string | null;
-        updatedAt: Date;
+        id: string;
+        userId: string;
+        createdAt: Date;
+        categoryId: string | null;
         fileKey: string;
         mimeType: string;
         originalName: string;
@@ -193,7 +193,7 @@ export declare class DocumentsController {
         isDeleted: boolean;
         deletedAt: Date | null;
         scanStatus: import(".prisma/client").$Enums.ScanStatus;
-        categoryId: string | null;
+        updatedAt: Date;
     }>;
     softDelete(id: string, userId: string, req: Request): Promise<{
         message: string;

@@ -17,28 +17,28 @@ export declare class CategoriesController {
             documents: number;
         };
     } & {
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;
     })[]>;
     create(userId: string, dto: CreateCategoryDto): Promise<{
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;
     }>;
     update(id: string, userId: string, dto: UpdateCategoryDto): Promise<{
-        id: string;
-        createdAt: Date;
-        userId: string;
         name: string;
+        id: string;
+        userId: string;
+        createdAt: Date;
         color: string;
         icon: string;
         isDefault: boolean;

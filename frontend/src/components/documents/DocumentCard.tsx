@@ -1,7 +1,7 @@
 import { daysUntil, formatBytes, formatDate, getExpiryColor, getFileIcon } from '@/lib/utils';
 import type { Document } from '@/types';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { Download, File as FileIcon, Pencil, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { Download, Pencil, RotateCcw, Share2, Trash2 } from 'lucide-react';
 
 interface Props {
     document: Document;
@@ -21,103 +21,97 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
 
     return (
         <div
-            className="group relative rounded-xl border border-border bg-[#171c27] hover:border-blue-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 cursor-pointer overflow-hidden"
+            className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-300 hover:border-blue-300 hover:shadow-md"
             onClick={() => onView?.(doc)}
         >
-            {/* Preview area */}
             <div
-                className="h-32 flex items-center justify-center relative"
-                style={{ backgroundColor: doc.category?.color ? `${doc.category.color}15` : '#1e2536' }}
+                className="relative flex h-28 items-center justify-center"
+                style={{ backgroundColor: doc.category?.color ? `${doc.category.color}14` : '#eff3f9' }}
             >
-                <div className="p-4 rounded-2xl bg-card border border-border shadow-xl">
+                <div className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
                     <CategoryIcon
                         name={doc.category?.icon || 'FileText'}
-                        className="w-12 h-12"
+                        className="h-10 w-10"
                         style={{ color: doc.category?.color || '#94a3b8' }}
                     />
                 </div>
 
-                {/* File type badge */}
-                <span className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/40 text-white/80 backdrop-blur-sm">
+                <span className="absolute right-2 top-2 rounded border border-slate-200 bg-white/90 px-2 py-0.5 text-[10px] font-mono font-bold text-slate-600">
                     {fileType}
                 </span>
 
-                {/* Action buttons on hover */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-slate-900/35 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     {!isTrash && (
                         <>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onDownload?.(doc); }}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Descargar"
                             >
-                                <Download className="w-4 h-4" />
+                                <Download className="h-4 w-4" />
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onEdit?.(doc); }}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Editar"
                             >
-                                <Pencil className="w-4 h-4" />
+                                <Pencil className="h-4 w-4" />
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onShare?.(doc); }}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Compartir"
                             >
-                                <Share2 className="w-4 h-4" />
+                                <Share2 className="h-4 w-4" />
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); onDelete?.(doc); }}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-red-500/30 text-white transition-colors"
+                                className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-red-500/30"
                                 title="Eliminar"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="h-4 w-4" />
                             </button>
                         </>
                     )}
                     {isTrash && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRestore?.(doc); }}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-green-500/30 text-white transition-colors"
+                            className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-green-500/30"
                             title="Restaurar"
                         >
-                            <RotateCcw className="w-4 h-4" />
+                            <RotateCcw className="h-4 w-4" />
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Info */}
             <div className="p-3">
-                <h3 className="text-sm font-medium text-foreground truncate">{doc.name}</h3>
-                <div className="flex items-center gap-2 mt-1">
+                <h3 className="truncate text-sm font-medium text-slate-900">{doc.name}</h3>
+                <div className="mt-1 flex items-center gap-2">
                     {doc.category && (
                         <span
-                            className="text-xs px-1.5 py-0.5 rounded-md"
+                            className="rounded-md px-1.5 py-0.5 text-xs"
                             style={{ backgroundColor: `${doc.category.color}20`, color: doc.category.color }}
                         >
                             {doc.category.name}
                         </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{formatBytes(doc.fileSizeBytes)}</span>
+                    <span className="text-xs text-slate-500">{formatBytes(doc.fileSizeBytes)}</span>
                 </div>
 
-                {/* Expiry badge */}
                 {doc.expiryDate && (
-                    <div className={`mt-2 text-xs px-2 py-1 rounded-md inline-block font-medium ${expiryClass}`}>
+                    <div className={`mt-2 inline-block rounded-md px-2 py-1 text-xs font-medium ${expiryClass}`}>
                         {days !== null && days < 0
                             ? 'Vencido'
                             : days !== null && days === 0
                                 ? 'Vence hoy'
-                                : `Vence en ${days} días`}
+                                : `Vence en ${days} dias`}
                     </div>
                 )}
 
-                {/* Life progress bar */}
                 {doc.issueDate && doc.expiryDate && (
                     <div className="mt-2">
-                        <div className="w-full h-1 rounded-full bg-slate-700 overflow-hidden">
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200">
                             <div
                                 className="h-full rounded-full bg-gradient-to-r from-green-500 to-blue-500 transition-all"
                                 style={{
@@ -131,7 +125,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                     </div>
                 )}
 
-                <p className="text-xs text-muted-foreground mt-2">{formatDate(doc.createdAt)}</p>
+                <p className="mt-2 text-xs text-slate-500">{formatDate(doc.createdAt)}</p>
             </div>
         </div>
     );

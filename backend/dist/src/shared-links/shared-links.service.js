@@ -60,7 +60,21 @@ let SharedLinksService = class SharedLinksService {
         });
         const frontendUrl = this.configService.get('frontendUrl', 'http://localhost:5173');
         return {
-            ...link,
+            id: link.id,
+            documentId: link.documentId,
+            userId: link.userId,
+            token: link.token,
+            expiresAt: link.expiresAt,
+            isOneTime: link.isOneTime,
+            accessCount: link.accessCount,
+            accessedAt: link.accessedAt,
+            createdAt: link.createdAt,
+            document: {
+                id: link.document.id,
+                name: link.document.name,
+                mimeType: link.document.mimeType,
+                originalName: link.document.originalName,
+            },
             accessUrl: `${frontendUrl}/shared/${link.token}`,
         };
     }

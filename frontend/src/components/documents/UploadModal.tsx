@@ -2,7 +2,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useUploadDocument } from '@/hooks/useDocuments';
 import { formatBytes } from '@/lib/utils';
 import { File as FileIcon, Upload, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 interface Props {
@@ -27,12 +27,18 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
     const upload = useUploadDocument();
     const { data: categories } = useCategories();
 
+    useEffect(() => {
+        if (!isOpen) return;
+        setFile(initialFile || null);
+        setName(initialFile ? initialFile.name.replace(/\.[^.]+$/, '') : '');
+    }, [initialFile, isOpen]);
+
     const onDrop = useCallback((files: File[]) => {
         if (files[0]) {
             setFile(files[0]);
-            if (!name) setName(files[0].name.replace(/\.[^.]+$/, ''));
+            setName((currentName) => currentName || files[0].name.replace(/\.[^.]+$/, ''));
         }
-    }, [name]);
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -56,13 +62,27 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
         }
     };
 
+    const resetForm = () => {
+        setFile(null);
+        setName('');
+        setCategoryId('');
+        setDescription('');
+        setExpiryDate('');
+        setIssueDate('');
+        setIssuingAuthority('');
+        setDocumentNumber('');
+        setTagsInput('');
+        setTags([]);
+        setProgress(0);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file || !name) return;
+        if (!file || !name.trim()) return;
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('name', name);
+        formData.append('name', name.trim());
         if (categoryId) formData.append('categoryId', categoryId);
         if (description) formData.append('description', description);
         if (expiryDate) formData.append('expiryDate', expiryDate);
@@ -76,115 +96,143 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                 formData,
                 onProgress: setProgress,
             });
+            resetForm();
             onClose();
-            // Reset form
-            setFile(null); setName(''); setCategoryId(''); setDescription('');
-            setExpiryDate(''); setIssueDate(''); setIssuingAuthority('');
-            setDocumentNumber(''); setTags([]); setProgress(0);
         } catch (err) {
             console.error('Upload failed:', err);
         }
     };
 
+    const handleClose = () => {
+        if (upload.isPending) return;
+        resetForm();
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto glass rounded-2xl shadow-2xl animate-fade-in m-4">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h2 className="text-lg font-semibold">Subir Documento</h2>
-                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-                        <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-sm" onClick={handleClose} />
+            <div className="relative max-h-[90vh] w-full max-w-[760px] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl animate-fade-in">
+                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5">
+                    <h2 className="text-lg font-semibold text-slate-900">Subir documento</h2>
+                    <button onClick={handleClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
-                    {/* Drop zone */}
+                <form onSubmit={handleSubmit} className="space-y-3.5 px-4 py-4">
                     {!file ? (
                         <div
                             {...getRootProps()}
-                            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-500/10' : 'border-border hover:border-blue-500/50'
+                            className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${isDragActive
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-300 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/40'
                                 }`}
                         >
                             <input {...getInputProps()} />
-                            <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
-                            <p className="text-sm text-muted-foreground">
-                                {isDragActive ? 'Suelta el archivo aquí' : 'Arrastra un archivo o haz clic para seleccionar'}
+                            <Upload className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+                            <p className="text-sm text-slate-600">
+                                {isDragActive ? 'Suelta el archivo aqui' : 'Arrastra un archivo o haz clic para seleccionar'}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG, DOCX (máx. 25MB)</p>
+                            <p className="mt-1 text-xs text-slate-500">PDF, JPG, PNG, DOCX (max. 25MB)</p>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
-                            <FileIcon className="w-8 h-8 text-blue-400" />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium truncate">{file.name}</p>
-                                <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+                        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <FileIcon className="h-8 w-8 text-blue-600" />
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">{file.name}</p>
+                                <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
                             </div>
-                            <button type="button" onClick={() => setFile(null)} className="p-1 hover:bg-accent rounded">
-                                <X className="w-4 h-4" />
+                            <button type="button" onClick={() => setFile(null)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-200">
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
                     )}
 
-                    {/* Form fields */}
                     <div>
-                        <label className="block text-sm font-medium mb-1">Nombre *</label>
-                        <input value={name} onChange={(e) => setName(e.target.value)} required
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                        <label className="mb-1 block text-sm font-medium text-slate-700">Nombre *</label>
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Categoría</label>
-                        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                            <option value="">Sin categoría</option>
-                            {categories?.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
+                        <select
+                            value={categoryId}
+                            onChange={(e) => setCategoryId(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        >
+                            <option value="">Sin categoria</option>
+                            {categories?.map((category) => (
+                                <option key={category.id} value={category.id}>{category.name}</option>
                             ))}
                         </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Fecha emisión</label>
-                            <input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                            <label className="mb-1 block text-sm font-medium text-slate-700">Fecha emision</label>
+                            <input
+                                type="date"
+                                value={issueDate}
+                                onChange={(e) => setIssueDate(e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Fecha vencimiento</label>
-                            <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                            <label className="mb-1 block text-sm font-medium text-slate-700">Fecha vencimiento</label>
+                            <input
+                                type="date"
+                                value={expiryDate}
+                                onChange={(e) => setExpiryDate(e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Entidad emisora</label>
-                            <input value={issuingAuthority} onChange={(e) => setIssuingAuthority(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                            <label className="mb-1 block text-sm font-medium text-slate-700">Entidad emisora</label>
+                            <input
+                                value={issuingAuthority}
+                                onChange={(e) => setIssuingAuthority(e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Número de documento</label>
-                            <input value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                            <label className="mb-1 block text-sm font-medium text-slate-700">Numero de documento</label>
+                            <input
+                                value={documentNumber}
+                                onChange={(e) => setDocumentNumber(e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Descripción</label>
-                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none" />
+                        <label className="mb-1 block text-sm font-medium text-slate-700">Descripcion</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={2}
+                            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Tags</label>
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                            {tags.map((t) => (
-                                <span key={t} className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center gap-1">
-                                    {t}
-                                    <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))}>
-                                        <X className="w-3 h-3" />
+                        <label className="mb-1 block text-sm font-medium text-slate-700">Tags</label>
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                            {tags.map((tag) => (
+                                <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                    {tag}
+                                    <button type="button" onClick={() => setTags(tags.filter((value) => value !== tag))}>
+                                        <X className="h-3 w-3" />
                                     </button>
                                 </span>
                             ))}
@@ -194,13 +242,12 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                             onChange={(e) => setTagsInput(e.target.value)}
                             onKeyDown={handleAddTag}
                             placeholder="Escribe y presiona Enter"
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
                     </div>
 
-                    {/* Progress bar */}
                     {upload.isPending && progress > 0 && (
-                        <div className="w-full h-2 rounded-full bg-slate-700 overflow-hidden">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                             <div
                                 className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
                                 style={{ width: `${progress}%` }}
@@ -210,10 +257,10 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
 
                     <button
                         type="submit"
-                        disabled={!file || !name || upload.isPending}
-                        className="w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/25"
+                        disabled={!file || !name.trim() || upload.isPending}
+                        className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-500 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {upload.isPending ? `Subiendo... ${progress}%` : 'Subir Documento'}
+                        {upload.isPending ? `Subiendo... ${progress}%` : 'Subir documento'}
                     </button>
                 </form>
             </div>

@@ -41,6 +41,8 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
     };
 
     const handleClose = () => {
+        setExpiresIn('24h');
+        setIsOneTime(false);
         setShareUrl('');
         setCopied(false);
         onClose();
@@ -49,71 +51,71 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
     if (!isOpen || !doc) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-            <div className="relative w-full max-w-md glass rounded-2xl shadow-2xl animate-fade-in m-4">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h2 className="text-lg font-semibold">Compartir Documento</h2>
-                    <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-                        <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-sm" onClick={handleClose} />
+            <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl animate-fade-in">
+                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5">
+                    <h2 className="text-lg font-semibold text-slate-900">Compartir documento</h2>
+                    <button onClick={handleClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
-                    <div className="p-3 rounded-lg bg-accent/30">
-                        <p className="text-sm font-medium">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{doc.originalName}</p>
+                <div className="space-y-3.5 px-4 py-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <p className="text-sm font-medium text-slate-900">{doc.name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{doc.originalName}</p>
                     </div>
 
                     {!shareUrl ? (
                         <>
                             <div>
-                                <label className="block text-sm font-medium mb-1.5">Expiración</label>
+                                <label className="mb-1.5 block text-sm font-medium text-slate-700">Expiracion</label>
                                 <select
                                     value={expiresIn}
                                     onChange={(e) => setExpiresIn(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                 >
                                     <option value="1h">1 hora</option>
                                     <option value="24h">24 horas</option>
-                                    <option value="7d">7 días</option>
-                                    <option value="30d">30 días</option>
-                                    <option value="">Sin expiración</option>
+                                    <option value="7d">7 dias</option>
+                                    <option value="30d">30 dias</option>
+                                    <option value="">Sin expiracion</option>
                                 </select>
                             </div>
 
-                            <label className="flex items-center gap-3 cursor-pointer">
+                            <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={isOneTime}
                                     onChange={(e) => setIsOneTime(e.target.checked)}
-                                    className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/50"
+                                    className="h-4 w-4 rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500/20"
                                 />
-                                <span className="text-sm">Acceso único (solo se puede abrir una vez)</span>
+                                <span className="text-sm text-slate-700">Acceso unico (solo se puede abrir una vez)</span>
                             </label>
 
                             <button
                                 onClick={handleCreate}
                                 disabled={loading}
-                                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/25"
+                                className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-500 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {loading ? 'Generando...' : 'Generar Link'}
+                                {loading ? 'Generando...' : 'Generar link'}
                             </button>
                         </>
                     ) : (
                         <div className="space-y-3">
-                            <p className="text-sm text-green-400 font-medium">✅ Link creado exitosamente</p>
+                            <p className="text-sm font-medium text-green-700">Link creado exitosamente</p>
                             <div className="flex gap-2">
                                 <input
                                     value={shareUrl}
                                     readOnly
-                                    className="flex-1 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm"
+                                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"
                                 />
                                 <button
                                     onClick={handleCopy}
-                                    className="px-3 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                                    className="rounded-lg bg-blue-50 px-3 py-2 text-blue-600 transition-colors hover:bg-blue-100"
                                 >
-                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 </button>
                             </div>
                         </div>

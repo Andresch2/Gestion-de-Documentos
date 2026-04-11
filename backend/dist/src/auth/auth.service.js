@@ -51,11 +51,11 @@ const bcrypt = __importStar(require("bcrypt"));
 const audit_service_1 = require("../audit/audit.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const DEFAULT_CATEGORIES = [
-    { name: 'Identidad', color: '#4f8ef7', icon: '🪪' },
-    { name: 'Finanzas', color: '#3ecf7a', icon: '💰' },
-    { name: 'Salud', color: '#f05252', icon: '🏥' },
-    { name: 'Legal', color: '#9b72f5', icon: '⚖️' },
-    { name: 'Propiedad', color: '#f57c42', icon: '🏠' },
+    { name: 'Identidad', color: '#4f8ef7', icon: 'Fingerprint' },
+    { name: 'Finanzas', color: '#3ecf7a', icon: 'Receipt' },
+    { name: 'Salud', color: '#f05252', icon: 'Activity' },
+    { name: 'Legal', color: '#9b72f5', icon: 'Scale' },
+    { name: 'Propiedad', color: '#f57c42', icon: 'Home' },
 ];
 let AuthService = AuthService_1 = class AuthService {
     constructor(prisma, jwtService, configService, auditService) {

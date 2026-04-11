@@ -31,53 +31,55 @@ export function SharedLinksPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Share2 className="w-6 h-6 text-green-400" /> Links Compartidos
+                <h1 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                    <Share2 className="h-5 w-5 text-emerald-500" /> Links compartidos
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1">Gestiona los links de acceso público a tus documentos</p>
+                <p className="mt-1 text-sm text-slate-500">Gestiona los links de acceso publico a tus documentos.</p>
             </div>
 
             {isLoading ? (
                 <div className="space-y-3">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-20 rounded-xl border border-border bg-card/50 animate-pulse" />
+                        <div key={i} className="h-16 rounded-xl border border-slate-200 bg-white animate-pulse" />
                     ))}
                 </div>
             ) : links.length === 0 ? (
-                <div className="text-center py-16">
-                    <Share2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-lg font-medium text-muted-foreground">No hay links compartidos</p>
-                    <p className="text-sm text-muted-foreground mt-1">Comparte documentos desde el dashboard</p>
+                <div className="py-14 text-center">
+                    <Share2 className="mx-auto mb-3 h-10 w-10 text-slate-400" />
+                    <p className="text-base font-medium text-slate-600">No hay links compartidos</p>
+                    <p className="mt-1 text-sm text-slate-500">Comparte documentos desde el dashboard.</p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {links.map((link: any) => (
-                        <div key={link.id} className="p-4 rounded-xl border border-border bg-card/50 hover:border-blue-500/30 transition-all flex items-center gap-4">
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{link.document?.name}</p>
-                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <div key={link.id} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-blue-300">
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">{link.document?.name}</p>
+                                <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
                                     <span>Creado: {formatDate(link.createdAt)}</span>
                                     {link.expiresAt && <span>Expira: {formatDate(link.expiresAt)}</span>}
-                                    {link.isOneTime && <span className="text-amber-400">Uso único</span>}
+                                    {link.isOneTime && <span className="text-amber-600">Uso unico</span>}
                                     <span>Accesos: {link.accessCount}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => handleCopy(link.token, link.id)}
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
                                     title="Copiar link"
                                 >
-                                    {copiedId === link.id ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                    {copiedId === link.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                                 </button>
                                 <button
-                                    onClick={() => { if (confirm('¿Revocar este link?')) deleteLink.mutate(link.id); }}
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                    onClick={() => {
+                                        if (confirm('Revocar este link?')) deleteLink.mutate(link.id);
+                                    }}
+                                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
                                     title="Revocar"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="h-4 w-4" />
                                 </button>
                             </div>
                         </div>
