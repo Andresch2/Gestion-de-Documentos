@@ -2,6 +2,7 @@ import { authApi } from '@/api/auth.api';
 import { CategoryModal } from '@/components/categories/CategoryModal';
 import { useCategories } from '@/hooks/useCategories';
 import { useDocumentStats } from '@/hooks/useDocuments';
+import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { Clock, Folder, LayoutDashboard, LogOut, Search, Settings, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -37,6 +38,7 @@ export function Sidebar() {
     const usedBytes = parseInt(user?.storageUsedBytes || '0', 10);
     const quotaBytes = parseInt(user?.storageQuotaBytes || '1073741824', 10);
     const usagePercent = quotaBytes > 0 ? Math.min(100, (usedBytes / quotaBytes) * 100) : 0;
+    const visibleUsagePercent = usedBytes > 0 ? Math.max(usagePercent, 2) : 0;
 
     const badges: Record<string, number> = {
         home: stats?.totalDocs || 0,
@@ -116,12 +118,12 @@ export function Sidebar() {
             <div className="mt-auto border-t border-slate-200 px-4 py-3.5">
                 <div className="mb-2 flex items-center justify-between text-[13px] text-slate-500">
                     <span>Almacenamiento</span>
-                    <span>{Math.round(usedBytes / (1024 * 1024))} MB / {Math.round(quotaBytes / (1024 * 1024 * 1024))} GB</span>
+                    <span>{formatBytes(usedBytes)} / {formatBytes(quotaBytes)}</span>
                 </div>
                 <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
                     <div
                         className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500"
-                        style={{ width: `${usagePercent}%` }}
+                        style={{ width: `${visibleUsagePercent}%` }}
                     />
                 </div>
 

@@ -1,4 +1,5 @@
 import { sharedLinksApi } from '@/api/shared-links.api';
+import { resolveApiUrl } from '@/api/client';
 import axios from 'axios';
 import { AlertTriangle, Download, FileText, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -44,7 +45,7 @@ export function SharedAccessPage() {
         if (!payload?.downloadUrl) return;
         setDownloading(true);
         try {
-            const response = await axios.get(payload.downloadUrl, { responseType: 'blob' });
+            const response = await axios.get(resolveApiUrl(payload.downloadUrl), { responseType: 'blob' });
             const blob = new Blob([response.data], { type: payload.mimeType });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');

@@ -2,6 +2,7 @@ import { documentsApi } from '@/api/documents.api';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteDocument, useDocuments } from '@/hooks/useDocuments';
 import type { Document } from '@/types';
@@ -11,14 +12,15 @@ import { useSearchParams } from 'react-router-dom';
 
 export function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [search, setSearch] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [search, setSearch] = useState(searchParams.get('q') || '');
+    const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
     const [categoryId, setCategoryId] = useState(searchParams.get('categoryId') || '');
     const [sortBy, setSortBy] = useState<'createdAt' | 'name'>('createdAt');
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [shareDoc, setShareDoc] = useState<Document | null>(null);
     const [editDoc, setEditDoc] = useState<Document | null>(null);
-    const [timer, setTimer] = useState<NodeJS.Timeout>();
+    const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<Document | null>(null);
+    const [timer, setTimer] = useState<ReturnType<typeof setTimeout>>();
 
     const { data: categories } = useCategories();
     const { data: docsData } = useDocuments({
@@ -30,13 +32,22 @@ export function SearchPage() {
 
     useEffect(() => {
         const urlCategoryId = searchParams.get('categoryId') || '';
+        const urlQuery = searchParams.get('q') || '';
         setCategoryId(urlCategoryId);
+        setSearch(urlQuery);
+        setDebouncedSearch(urlQuery);
     }, [searchParams]);
 
     const handleSearch = (val: string) => {
         setSearch(val);
         if (timer) clearTimeout(timer);
-        setTimer(setTimeout(() => setDebouncedSearch(val), 300));
+        setTimer(setTimeout(() => {
+            setDebouncedSearch(val);
+            const nextParams = new URLSearchParams(searchParams);
+            if (val.trim()) nextParams.set('q', val.trim());
+            else nextParams.delete('q');
+            setSearchParams(nextParams);
+        }, 300));
     };
 
     const handleDownload = async (doc: Document) => {
@@ -160,7 +171,7 @@ export function SearchPage() {
                 onClose={() => setSelectedDoc(null)}
                 onDownload={handleDownload}
                 onDelete={(d) => {
-                    if (confirm(`Mover "${d.name}" a la papelera?`)) deleteDoc.mutate(d.id);
+                    setConfirmDeleteDoc(d);
                     setSelectedDoc(null);
                 }}
                 onShare={setShareDoc}
@@ -168,6 +179,20 @@ export function SearchPage() {
             />
             <EditDocumentModal document={editDoc} isOpen={!!editDoc} onClose={() => setEditDoc(null)} />
             <ShareModal document={shareDoc} isOpen={!!shareDoc} onClose={() => setShareDoc(null)} />
+            <ConfirmDialog
+                isOpen={!!confirmDeleteDoc}
+                title="Mover a la papelera"
+                message={confirmDeleteDoc ? `Se movera "${confirmDeleteDoc.name}" a la papelera para que puedas restaurarlo despues.` : ''}
+                confirmLabel="Mover"
+                tone="warning"
+                onClose={() => setConfirmDeleteDoc(null)}
+                onConfirm={() => {
+                    if (confirmDeleteDoc) {
+                        deleteDoc.mutate(confirmDeleteDoc.id);
+                    }
+                    setConfirmDeleteDoc(null);
+                }}
+            />
         </div>
     );
 }

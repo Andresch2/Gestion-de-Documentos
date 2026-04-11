@@ -1,10 +1,19 @@
 import { useAuthStore } from '@/store/auth.store';
 import axios from 'axios';
 
-const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || '/api';
+export const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || '/api';
+const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
+const apiOrigin = normalizedApiBaseUrl.replace(/\/api$/, '');
+
+export function resolveApiUrl(path: string): string {
+    if (/^https?:\/\//i.test(path)) return path;
+    if (!path.startsWith('/')) return `${normalizedApiBaseUrl}/${path}`;
+    if (path.startsWith('/api/')) return `${apiOrigin}${path}`;
+    return `${normalizedApiBaseUrl}${path}`;
+}
 
 const apiClient = axios.create({
-    baseURL: apiBaseUrl,
+    baseURL: normalizedApiBaseUrl,
     withCredentials: true,
 });
 

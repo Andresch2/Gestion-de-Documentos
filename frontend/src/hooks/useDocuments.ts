@@ -1,6 +1,20 @@
+import { usersApi } from '@/api/users.api';
 import { documentsApi } from '@/api/documents.api';
 import type { Document, DocumentQueryParams, PaginatedResponse } from '@/types';
+import { useAuthStore } from '@/store/auth.store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+async function syncCurrentUser() {
+    const { data } = await usersApi.getMe();
+    const currentUser = (data.data || data) as {
+        storageUsedBytes: string;
+        storageQuotaBytes: string;
+        name?: string;
+        email?: string;
+    };
+
+    useAuthStore.getState().updateUser(currentUser);
+}
 
 export function useDocuments(params?: DocumentQueryParams) {
     return useQuery({
@@ -53,6 +67,7 @@ export function useUploadDocument() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
             queryClient.invalidateQueries({ queryKey: ['categories'] });
+            void syncCurrentUser();
         },
     });
 }
@@ -64,6 +79,7 @@ export function useUpdateDocument() {
             documentsApi.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
+            void syncCurrentUser();
         },
     });
 }
@@ -94,6 +110,7 @@ export function usePermanentDeleteDocument() {
         mutationFn: (id: string) => documentsApi.permanentDelete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
+            void syncCurrentUser();
         },
     });
 }

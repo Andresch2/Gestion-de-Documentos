@@ -1,11 +1,15 @@
-﻿import { DocumentCard } from '@/components/documents/DocumentCard';
+import { DocumentCard } from '@/components/documents/DocumentCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDocuments, usePermanentDeleteDocument, useRestoreDocument } from '@/hooks/useDocuments';
 import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 export function TrashPage() {
     const { data: docsData, isLoading } = useDocuments({ isDeleted: true, limit: 50 });
     const restoreDoc = useRestoreDocument();
     const permanentDelete = usePermanentDeleteDocument();
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
 
     const documents = docsData?.data || [];
 
@@ -16,13 +20,17 @@ export function TrashPage() {
                     <p className="text-lg font-semibold text-red-600">Papelera de reciclaje</p>
                     <p className="text-slate-600">Los documentos se borran permanentemente tras 30 dias.</p>
                 </div>
-                <button className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100">
+                <button
+                    onClick={() => setConfirmEmptyTrash(true)}
+                    disabled={documents.length === 0}
+                    className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                     Vaciar papelera
                 </button>
             </div>
 
             {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {[...Array(4)].map((_, i) => (
                         <div key={i} className="h-56 rounded-xl border border-slate-200 bg-white animate-pulse" />
                     ))}
@@ -34,7 +42,7 @@ export function TrashPage() {
                     <p className="mt-1 text-base text-slate-500">Los documentos eliminados apareceran aqui.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {documents.map((doc) => (
                         <div key={doc.id} className="relative">
                             <DocumentCard
@@ -42,18 +50,16 @@ export function TrashPage() {
                                 isTrash
                                 onRestore={(d) => restoreDoc.mutate(d.id)}
                             />
-                            <div className="flex gap-2 mt-2">
+                            <div className="mt-2 flex gap-2">
                                 <button
                                     onClick={() => restoreDoc.mutate(doc.id)}
-                                    className="flex-1 py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-semibold transition-colors"
+                                    className="flex-1 rounded-lg bg-emerald-50 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-100"
                                 >
                                     Restaurar
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        if (confirm('Eliminar permanentemente? Esta accion no se puede deshacer.')) permanentDelete.mutate(doc.id);
-                                    }}
-                                    className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors"
+                                    onClick={() => setConfirmDeleteId(doc.id)}
+                                    className="flex-1 rounded-lg bg-red-50 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
                                 >
                                     Eliminar
                                 </button>
@@ -62,6 +68,32 @@ export function TrashPage() {
                     ))}
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!confirmDeleteId}
+                title="Eliminar permanentemente"
+                message="Esta accion eliminara el documento para siempre y liberara su espacio de almacenamiento."
+                confirmLabel="Eliminar"
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => {
+                    if (confirmDeleteId) {
+                        permanentDelete.mutate(confirmDeleteId);
+                    }
+                    setConfirmDeleteId(null);
+                }}
+            />
+
+            <ConfirmDialog
+                isOpen={confirmEmptyTrash}
+                title="Vaciar papelera"
+                message="Se eliminaran permanentemente todos los documentos de la papelera. Esta accion no se puede deshacer."
+                confirmLabel="Vaciar"
+                onClose={() => setConfirmEmptyTrash(false)}
+                onConfirm={() => {
+                    documents.forEach((doc) => permanentDelete.mutate(doc.id));
+                    setConfirmEmptyTrash(false);
+                }}
+            />
         </div>
     );
 }

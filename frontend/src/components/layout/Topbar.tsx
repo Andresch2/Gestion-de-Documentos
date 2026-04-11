@@ -1,7 +1,7 @@
 ﻿import { useNotifications, useReadAllNotifications, useReadNotification } from '@/hooks/useNotifications';
 import { formatDate } from '@/lib/utils';
 import { Bell, Plus, Search, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const titleByPath: Record<string, string> = {
@@ -17,6 +17,7 @@ const titleByPath: Record<string, string> = {
 
 export function Topbar() {
     const [showNotifications, setShowNotifications] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
     const { data: notificationsData } = useNotifications();
@@ -26,6 +27,33 @@ export function Topbar() {
     const unreadCount = notificationsData?.unreadCount || 0;
     const notifications = notificationsData?.data || [];
     const title = titleByPath[location.pathname] || 'GestorDoc';
+    const currentQuery = new URLSearchParams(location.search).get('q') || '';
+
+    useEffect(() => {
+        setSearchValue(currentQuery);
+    }, [currentQuery]);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            const normalizedValue = searchValue.trim();
+            const normalizedCurrent = currentQuery.trim();
+
+            if (normalizedValue === normalizedCurrent) return;
+
+            if (!normalizedValue) {
+                if (location.pathname === '/search') {
+                    navigate('/search', { replace: true });
+                }
+                return;
+            }
+
+            navigate(`/search?q=${encodeURIComponent(normalizedValue)}`, {
+                replace: location.pathname === '/search',
+            });
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [searchValue, currentQuery, location.pathname, navigate]);
 
     const openUpload = () => {
         if (location.pathname === '/') {
@@ -42,6 +70,8 @@ export function Topbar() {
             <div className="relative w-full max-w-[380px]">
                 <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
                     placeholder="Buscar documentos..."
                     className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100/90 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />

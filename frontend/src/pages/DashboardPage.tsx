@@ -4,6 +4,7 @@ import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet'
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
 import { UploadModal } from '@/components/documents/UploadModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteDocument, useDocuments, useDocumentStats, useExpiringDocuments } from '@/hooks/useDocuments';
 import type { Document, DocumentQueryParams } from '@/types';
@@ -18,6 +19,7 @@ export function DashboardPage() {
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [shareDoc, setShareDoc] = useState<Document | null>(null);
     const [editDoc, setEditDoc] = useState<Document | null>(null);
+    const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<Document | null>(null);
     const [initialFile, setInitialFile] = useState<File | undefined>();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -82,9 +84,7 @@ export function DashboardPage() {
     };
 
     const handleDelete = (doc: Document) => {
-        if (confirm(`Mover "${doc.name}" a la papelera?`)) {
-            deleteDoc.mutate(doc.id);
-        }
+        setConfirmDeleteDoc(doc);
     };
 
     const documents = docsData?.data || [];
@@ -283,6 +283,20 @@ export function DashboardPage() {
             />
             <EditDocumentModal document={editDoc} isOpen={!!editDoc} onClose={() => setEditDoc(null)} />
             <ShareModal document={shareDoc} isOpen={!!shareDoc} onClose={() => setShareDoc(null)} />
+            <ConfirmDialog
+                isOpen={!!confirmDeleteDoc}
+                title="Mover a la papelera"
+                message={confirmDeleteDoc ? `Se movera "${confirmDeleteDoc.name}" a la papelera para que puedas restaurarlo despues.` : ''}
+                confirmLabel="Mover"
+                tone="warning"
+                onClose={() => setConfirmDeleteDoc(null)}
+                onConfirm={() => {
+                    if (confirmDeleteDoc) {
+                        deleteDoc.mutate(confirmDeleteDoc.id);
+                    }
+                    setConfirmDeleteDoc(null);
+                }}
+            />
         </div>
     );
 }

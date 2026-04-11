@@ -2,7 +2,9 @@ import { documentsApi } from '@/api/documents.api';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteDocument, useExpiringDocuments } from '@/hooks/useDocuments';
+import { daysUntil, formatDate } from '@/lib/utils';
 import type { Document } from '@/types';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
@@ -12,6 +14,7 @@ export function ExpiringPage() {
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [shareDoc, setShareDoc] = useState<Document | null>(null);
     const [editDoc, setEditDoc] = useState<Document | null>(null);
+    const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<Document | null>(null);
     const deleteDoc = useDeleteDocument();
 
     const handleDownload = async (doc: Document) => {
@@ -72,10 +75,18 @@ export function ExpiringPage() {
                                 <p className="text-sm text-slate-500 mt-1">
                                     <span className="font-semibold" style={{ color: doc.category?.color || '#64748b' }}>{doc.category?.name || 'Sin categoria'}</span>
                                     {'  '}
-                                    {doc.expiryDate ? new Date(doc.expiryDate).toISOString().slice(0, 10) : 'Sin fecha'}
+                                    {doc.expiryDate ? formatDate(doc.expiryDate) : 'Sin fecha'}
                                 </p>
                             </div>
-                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">Vencido</span>
+                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">
+                                {(() => {
+                                    const days = daysUntil(doc.expiryDate);
+                                    if (days === null) return 'Sin fecha';
+                                    if (days < 0) return 'Vencido';
+                                    if (days === 0) return 'Vence hoy';
+                                    return `Vence en ${days} dias`;
+                                })()}
+                            </span>
                         </button>
                     ))}
                 </div>
@@ -87,7 +98,7 @@ export function ExpiringPage() {
                 onClose={() => setSelectedDoc(null)}
                 onDownload={handleDownload}
                 onDelete={(d) => {
-                    if (confirm(`Mover "${d.name}" a la papelera?`)) deleteDoc.mutate(d.id);
+                    setConfirmDeleteDoc(d);
                     setSelectedDoc(null);
                 }}
                 onShare={setShareDoc}
@@ -95,6 +106,20 @@ export function ExpiringPage() {
             />
             <EditDocumentModal document={editDoc} isOpen={!!editDoc} onClose={() => setEditDoc(null)} />
             <ShareModal document={shareDoc} isOpen={!!shareDoc} onClose={() => setShareDoc(null)} />
+            <ConfirmDialog
+                isOpen={!!confirmDeleteDoc}
+                title="Mover a la papelera"
+                message={confirmDeleteDoc ? `Se movera "${confirmDeleteDoc.name}" a la papelera para que puedas restaurarlo despues.` : ''}
+                confirmLabel="Mover"
+                tone="warning"
+                onClose={() => setConfirmDeleteDoc(null)}
+                onConfirm={() => {
+                    if (confirmDeleteDoc) {
+                        deleteDoc.mutate(confirmDeleteDoc.id);
+                    }
+                    setConfirmDeleteDoc(null);
+                }}
+            />
         </div>
     );
 }
