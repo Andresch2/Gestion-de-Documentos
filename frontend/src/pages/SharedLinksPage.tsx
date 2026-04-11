@@ -1,3 +1,4 @@
+import { resolveApiUrl } from '@/api/client';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,7 +25,7 @@ export function SharedLinksPage() {
     const links = linksRes || [];
 
     const handleCopy = async (token: string, id: string) => {
-        const url = `${window.location.origin}/shared/${token}`;
+        const url = resolveApiUrl(`/shared-links/open/${token}`);
         await navigator.clipboard.writeText(url);
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);

@@ -2,6 +2,7 @@ import { documentsApi } from '@/api/documents.api';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteDocument, useExpiringDocuments } from '@/hooks/useDocuments';
 import { daysUntil, formatDate } from '@/lib/utils';
@@ -40,7 +41,7 @@ export function ExpiringPage() {
         <div className="space-y-5">
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5">
                 <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-700 mt-0.5" />
+                    <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-700" />
                     <div>
                         <p className="text-lg font-semibold text-slate-900">Documentos proximos a vencer</p>
                         <p className="text-slate-600">Los que vencen en los proximos 60 dias.</p>
@@ -54,7 +55,7 @@ export function ExpiringPage() {
             {isLoading ? (
                 <div className="space-y-3">
                     {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-20 rounded-xl border border-slate-200 bg-white animate-pulse" />
+                        <div key={i} className="h-20 animate-pulse rounded-xl border border-slate-200 bg-white" />
                     ))}
                 </div>
             ) : documents.length === 0 ? (
@@ -69,16 +70,24 @@ export function ExpiringPage() {
                             onClick={() => setSelectedDoc(doc)}
                             className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/40"
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{doc.category?.icon || '📄'}</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                                <CategoryIcon
+                                    name={doc.category?.icon || 'FileText'}
+                                    className="h-5 w-5"
+                                    style={{ color: doc.category?.color || '#94a3b8' }}
+                                />
+                            </div>
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-base font-semibold text-slate-900">{doc.name}</p>
-                                <p className="text-sm text-slate-500 mt-1">
-                                    <span className="font-semibold" style={{ color: doc.category?.color || '#64748b' }}>{doc.category?.name || 'Sin categoria'}</span>
-                                    {'  '}
+                                <p className="mt-1 text-sm text-slate-500">
+                                    <span className="font-semibold" style={{ color: doc.category?.color || '#64748b' }}>
+                                        {doc.category?.name || 'Sin categoria'}
+                                    </span>
+                                    {' '}
                                     {doc.expiryDate ? formatDate(doc.expiryDate) : 'Sin fecha'}
                                 </p>
                             </div>
-                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">
+                            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
                                 {(() => {
                                     const days = daysUntil(doc.expiryDate);
                                     if (days === null) return 'Sin fecha';

@@ -1,3 +1,4 @@
+import { resolveApiUrl } from '@/api/client';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import type { Document } from '@/types';
 import { Check, Copy, X } from 'lucide-react';
@@ -26,7 +27,7 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
                 isOneTime,
             });
             const result = data.data || data;
-            setShareUrl(result.accessUrl);
+            setShareUrl(resolveApiUrl(`/shared-links/open/${result.token}`));
         } catch (err) {
             console.error('Failed to create share link:', err);
         } finally {

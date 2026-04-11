@@ -67,6 +67,7 @@ export function useUploadDocument() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
             queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
             void syncCurrentUser();
         },
     });

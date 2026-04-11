@@ -6,7 +6,7 @@ export function useNotifications(page?: number) {
         queryKey: ['notifications', page],
         queryFn: async () => {
             const { data } = await notificationsApi.getAll(page);
-            return data.data || data;
+            return data;
         },
         refetchInterval: 30000, // Poll every 30s
     });

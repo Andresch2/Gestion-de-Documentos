@@ -21,7 +21,6 @@ import { SharedLinksService } from './shared-links.service';
 export class SharedLinksController {
     constructor(
         private readonly sharedLinksService: SharedLinksService,
-        private readonly storageService: StorageService,
     ) { }
 
     @Post()
@@ -55,15 +54,19 @@ export class SharedLinksController {
     }
 
     @Get('access/:token')
-    @ApiOperation({ summary: 'Acceder a documento compartido (público)' })
+    @ApiOperation({ summary: 'Acceder a documento compartido publico' })
     async access(@Param('token') token: string) {
         return this.sharedLinksService.accessByToken(token);
     }
+
+    @Get('open/:token')
+    @ApiOperation({ summary: 'Abrir link compartido publico' })
+    async open(@Param('token') token: string, @Res() res: Response) {
+        const payload = await this.sharedLinksService.accessByToken(token);
+        return res.redirect(payload.downloadUrl);
+    }
 }
 
-// Separate controller for public download is handled inline:
-// GET /api/documents/:id/public-download/:token is added to DocumentsController
-// But since the prompt wants it here, we add it as a separate route
 @Controller('documents')
 export class PublicDownloadController {
     constructor(
@@ -72,7 +75,7 @@ export class PublicDownloadController {
     ) { }
 
     @Get(':id/public-download/:token')
-    @ApiOperation({ summary: 'Descarga pública de documento compartido' })
+    @ApiOperation({ summary: 'Descarga publica de documento compartido' })
     async publicDownload(
         @Param('id') id: string,
         @Param('token') token: string,

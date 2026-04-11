@@ -2,9 +2,11 @@ import { documentsApi } from '@/api/documents.api';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
 import { ShareModal } from '@/components/documents/ShareModal';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteDocument, useDocuments } from '@/hooks/useDocuments';
+import { formatBytes } from '@/lib/utils';
 import type { Document } from '@/types';
 import { Search as SearchIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -146,19 +148,27 @@ export function SearchPage() {
                             onClick={() => setSelectedDoc(doc)}
                             className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/40"
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">{doc.category?.icon || '📄'}</div>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                                <CategoryIcon
+                                    name={doc.category?.icon || 'FileText'}
+                                    className="h-5 w-5"
+                                    style={{ color: doc.category?.color || '#94a3b8' }}
+                                />
+                            </div>
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-base font-semibold text-slate-900">{doc.name}</p>
-                                <p className="text-sm text-slate-500 mt-1">
-                                    <span className="font-medium" style={{ color: doc.category?.color || '#64748b' }}>{doc.category?.name || 'Sin categoria'}</span>
-                                    {'  ·  '}
-                                    {Math.round(Number(doc.fileSizeBytes) / (1024 * 1024) * 10) / 10} MB
-                                    {'  ·  '}
+                                <p className="mt-1 text-sm text-slate-500">
+                                    <span className="font-medium" style={{ color: doc.category?.color || '#64748b' }}>
+                                        {doc.category?.name || 'Sin categoria'}
+                                    </span>
+                                    {' · '}
+                                    {formatBytes(doc.fileSizeBytes)}
+                                    {' · '}
                                     {new Date(doc.createdAt).toISOString().slice(0, 10)}
                                 </p>
                             </div>
                             {isExpired(doc) && (
-                                <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold">Vencido</span>
+                                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">Vencido</span>
                             )}
                         </button>
                     ))}
