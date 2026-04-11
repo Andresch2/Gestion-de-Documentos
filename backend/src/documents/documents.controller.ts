@@ -17,9 +17,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import * as fs from 'fs';
-import { diskStorage } from 'multer';
-import * as path from 'path';
+import { memoryStorage } from 'multer';
 import { AuditService } from '../audit/audit.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -73,18 +71,7 @@ export class DocumentsController {
     @ApiConsumes('multipart/form-data')
     @UseInterceptors(
         FileInterceptor('file', {
-            storage: diskStorage({
-                destination: (req: any, _file, cb) => {
-                    const userId = req.user?.id || 'unknown';
-                    const dir = path.join(process.cwd(), 'uploads', userId);
-                    fs.mkdirSync(dir, { recursive: true });
-                    cb(null, dir);
-                },
-                filename: (_req, file, cb) => {
-                    const uniqueName = `${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
-                    cb(null, uniqueName);
-                },
-            }),
+            storage: memoryStorage(),
             limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
             fileFilter: (_req, file, cb) => {
                 if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
@@ -135,7 +122,7 @@ export class DocumentsController {
         @Res() res: Response,
     ) {
         const doc = await this.documentsService.findOne(id, userId);
-        const filePath = this.storageService.getFilePath(doc.fileKey);
+        const storedFile = await this.storageService.download(doc.fileKey);
 
         await this.auditService.log({
             userId,
@@ -145,7 +132,10 @@ export class DocumentsController {
             userAgent: req.headers['user-agent'],
         });
 
-        res.download(filePath, doc.originalName);
+        res.attachment(doc.originalName);
+        res.type(doc.mimeType || storedFile.contentType || 'application/octet-stream');
+        res.setHeader('Content-Length', storedFile.buffer.byteLength.toString());
+        res.send(storedFile.buffer);
     }
 
     @Patch(':id')

@@ -1,24 +1,52 @@
 import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const prisma = new PrismaClient();
 
-async function main() {
-    console.log('[SEED] Seeding database...');
+async function storeSeedFile(fileKey: string, fileBuffer: Buffer) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
 
-    // Create placeholder PDF directory
+    if (supabaseUrl && serviceRoleKey) {
+        const supabase = createClient(supabaseUrl, serviceRoleKey, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        });
+
+        const { error } = await supabase.storage.from(bucket).upload(fileKey, fileBuffer, {
+            contentType: 'application/pdf',
+            upsert: true,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        console.log(`[FILE] Placeholder PDF uploaded to Supabase: ${bucket}/${fileKey}`);
+        return;
+    }
+
     const seedDir = path.join(process.cwd(), 'uploads', 'seed');
     fs.mkdirSync(seedDir, { recursive: true });
+    fs.writeFileSync(path.join(seedDir, 'placeholder.pdf'), fileBuffer);
+    console.log('[FILE] Placeholder PDF created locally');
+}
+
+async function main() {
+    console.log('[SEED] Seeding database...');
 
     // Create minimal valid PDF file
     const minimalPdf = Buffer.from(
         '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF',
         'utf-8',
     );
-    fs.writeFileSync(path.join(seedDir, 'placeholder.pdf'), minimalPdf);
-    console.log('[FILE] Placeholder PDF created');
+    await storeSeedFile('seed/placeholder.pdf', minimalPdf);
 
     // Hash password
     const passwordHash = await bcrypt.hash('Demo1234!', 12);

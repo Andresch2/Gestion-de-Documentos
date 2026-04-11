@@ -5,7 +5,6 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -18,6 +17,7 @@ async function bootstrap() {
     // Security
     app.use(helmet());
     app.use(cookieParser());
+    app.set('trust proxy', 1);
 
     // CORS
     app.enableCors({
@@ -47,9 +47,6 @@ async function bootstrap() {
 
     // Exception filter
     app.useGlobalFilters(new HttpExceptionFilter());
-
-    // Static assets for uploaded files
-    app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });
 
     // Swagger
     const swaggerConfig = new DocumentBuilder()

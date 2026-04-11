@@ -5,6 +5,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
@@ -19,6 +20,15 @@ export class DocumentsService {
         private readonly storageService: StorageService,
         private readonly auditService: AuditService,
     ) { }
+
+    private buildFileKey(userId: string, originalName: string): string {
+        const safeOriginalName = originalName
+            .trim()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-zA-Z0-9._-]/g, '_');
+
+        return `${userId}/${Date.now()}-${randomUUID()}-${safeOriginalName}`;
+    }
 
     async findAll(userId: string, query: QueryDocumentsDto) {
         const { page = 1, limit = 20, categoryId, search, tags, isDeleted, sortBy, sortOrder } = query;
@@ -121,54 +131,63 @@ export class DocumentsService {
             throw new BadRequestException('Se ha excedido la cuota de almacenamiento');
         }
 
-        const fileKey = `${userId}/${file.filename}`;
+        const fileKey = this.buildFileKey(userId, file.originalname);
+        await this.storageService.upload(fileKey, file.buffer, file.mimetype);
 
-        // Handle tags
         let tagConnections: { tagId: string }[] = [];
-        if (dto.tags && dto.tags.length > 0) {
-            const tagRecords = await Promise.all(
-                dto.tags.map(async (tagName) => {
-                    return this.prisma.tag.upsert({
-                        where: { userId_name: { userId, name: tagName } },
-                        create: { userId, name: tagName },
-                        update: {},
-                    });
-                }),
-            );
-            tagConnections = tagRecords.map((t) => ({ tagId: t.id }));
+        let document: any;
+        try {
+            // Handle tags
+            if (dto.tags && dto.tags.length > 0) {
+                const tagRecords = await Promise.all(
+                    dto.tags.map(async (tagName) => {
+                        return this.prisma.tag.upsert({
+                            where: { userId_name: { userId, name: tagName } },
+                            create: { userId, name: tagName },
+                            update: {},
+                        });
+                    }),
+                );
+                tagConnections = tagRecords.map((t) => ({ tagId: t.id }));
+            }
+
+            document = await this.prisma.$transaction(async (tx) => {
+                const createdDocument = await tx.document.create({
+                    data: {
+                        userId,
+                        categoryId: dto.categoryId || null,
+                        name: dto.name,
+                        description: dto.description,
+                        fileKey,
+                        fileSizeBytes: BigInt(file.size),
+                        mimeType: file.mimetype,
+                        originalName: file.originalname,
+                        issuingAuthority: dto.issuingAuthority,
+                        documentNumber: dto.documentNumber,
+                        issueDate: dto.issueDate ? new Date(dto.issueDate) : null,
+                        expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+                        tags: {
+                            create: tagConnections.map((tc) => ({ tagId: tc.tagId })),
+                        },
+                    },
+                    include: {
+                        category: true,
+                        tags: { include: { tag: true } },
+                    },
+                });
+
+                await tx.user.update({
+                    where: { id: userId },
+                    data: { storageUsedBytes: BigInt(newUsed) },
+                });
+
+                return createdDocument;
+            });
+        } catch (error) {
+            await this.storageService.delete(fileKey);
+            throw error;
         }
 
-        const document = await this.prisma.document.create({
-            data: {
-                userId,
-                categoryId: dto.categoryId || null,
-                name: dto.name,
-                description: dto.description,
-                fileKey,
-                fileSizeBytes: BigInt(file.size),
-                mimeType: file.mimetype,
-                originalName: file.originalname,
-                issuingAuthority: dto.issuingAuthority,
-                documentNumber: dto.documentNumber,
-                issueDate: dto.issueDate ? new Date(dto.issueDate) : null,
-                expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
-                tags: {
-                    create: tagConnections.map((tc) => ({ tagId: tc.tagId })),
-                },
-            },
-            include: {
-                category: true,
-                tags: { include: { tag: true } },
-            },
-        });
-
-        // Update storage used
-        await this.prisma.user.update({
-            where: { id: userId },
-            data: { storageUsedBytes: BigInt(newUsed) },
-        });
-
-        // Notification
         await this.prisma.notification.create({
             data: {
                 userId,
@@ -178,7 +197,6 @@ export class DocumentsService {
             },
         });
 
-        // Audit
         await this.auditService.log({
             userId,
             action: 'UPLOAD',
@@ -190,7 +208,7 @@ export class DocumentsService {
         return {
             ...document,
             fileSizeBytes: document.fileSizeBytes.toString(),
-            tags: document.tags.map((t) => t.tag),
+            tags: document.tags.map((t: any) => t.tag),
         };
     }
 

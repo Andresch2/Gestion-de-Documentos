@@ -8,6 +8,7 @@ import {
     Res,
     UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -20,7 +21,22 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly configService: ConfigService,
+    ) { }
+
+    private getRefreshCookieOptions() {
+        const isProduction = this.configService.get<string>('nodeEnv') === 'production';
+
+        return {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax' as const,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/',
+        };
+    }
 
     @Post('register')
     @ApiOperation({ summary: 'Registrar nuevo usuario' })
@@ -41,13 +57,7 @@ export class AuthController {
         const result = await this.authService.login(dto, ip, userAgent);
 
         // Set refresh token in httpOnly cookie
-        res.cookie('refreshToken', result.refreshToken, {
-            httpOnly: true,
-            secure: false, // false for local development
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-            path: '/',
-        });
+        res.cookie('refreshToken', result.refreshToken, this.getRefreshCookieOptions());
 
         return {
             accessToken: result.accessToken,
@@ -68,13 +78,7 @@ export class AuthController {
             user.refreshToken,
         );
 
-        res.cookie('refreshToken', tokens.refreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: '/',
-        });
+        res.cookie('refreshToken', tokens.refreshToken, this.getRefreshCookieOptions());
 
         return { accessToken: tokens.accessToken };
     }

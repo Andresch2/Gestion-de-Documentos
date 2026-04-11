@@ -79,7 +79,10 @@ export class PublicDownloadController {
         @Res() res: Response,
     ) {
         const doc = await this.sharedLinksService.publicDownload(id, token);
-        const filePath = this.storageService.getFilePath(doc.fileKey);
-        res.download(filePath, doc.originalName);
+        const storedFile = await this.storageService.download(doc.fileKey);
+        res.attachment(doc.originalName);
+        res.type(doc.mimeType || storedFile.contentType || 'application/octet-stream');
+        res.setHeader('Content-Length', storedFile.buffer.byteLength.toString());
+        res.send(storedFile.buffer);
     }
 }
