@@ -1,8 +1,10 @@
 import { useAuthStore } from '@/store/auth.store';
 import axios from 'axios';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || '/api';
+
 const apiClient = axios.create({
-    baseURL: '/api',
+    baseURL: apiBaseUrl,
     withCredentials: true,
 });
 
@@ -54,7 +56,7 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const { data } = await axios.post('/api/auth/refresh', null, {
+                const { data } = await axios.post(`${apiBaseUrl}/auth/refresh`, null, {
                     withCredentials: true,
                 });
                 const newToken = data.data?.accessToken || data.accessToken;

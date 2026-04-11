@@ -1,4 +1,4 @@
-﻿import { documentsApi } from '@/api/documents.api';
+import { documentsApi } from '@/api/documents.api';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentDetailSheet } from '@/components/documents/DocumentDetailSheet';
 import { EditDocumentModal } from '@/components/documents/EditDocumentModal';
