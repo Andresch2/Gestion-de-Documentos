@@ -2,7 +2,7 @@ import { resolveApiUrl } from '@/api/client';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Copy, Share2, Trash2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export function SharedLinksPage() {
@@ -19,7 +19,10 @@ export function SharedLinksPage() {
 
     const deleteLink = useMutation({
         mutationFn: (id: string) => sharedLinksApi.delete(id),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shared-links'] }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['shared-links'] });
+            queryClient.invalidateQueries({ queryKey: ['documents', 'stats'] });
+        },
     });
 
     const links = linksRes || [];
@@ -58,7 +61,7 @@ export function SharedLinksPage() {
                         <div key={link.id} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-blue-300">
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium text-slate-800">{link.document?.name}</p>
-                                <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
+                                <div className="mt-1 flex items-center gap-3 text-xs text-slate-600">
                                     <span>Creado: {formatDate(link.createdAt)}</span>
                                     {link.expiresAt && <span>Expira: {formatDate(link.expiresAt)}</span>}
                                     {link.isOneTime && <span className="text-amber-600">Uso unico</span>}
@@ -66,10 +69,21 @@ export function SharedLinksPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                <a
+                                    href={resolveApiUrl(`/shared-links/open/${link.token}`)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+                                    title="Abrir link"
+                                    aria-label={`Abrir link compartido de ${link.document?.name || 'documento'}`}
+                                >
+                                    <ExternalLink className="h-4 w-4" />
+                                </a>
                                 <button
                                     onClick={() => handleCopy(link.token, link.id)}
                                     className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
                                     title="Copiar link"
+                                    aria-label={`Copiar link compartido de ${link.document?.name || 'documento'}`}
                                 >
                                     {copiedId === link.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                                 </button>
@@ -79,6 +93,7 @@ export function SharedLinksPage() {
                                     }}
                                     className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
                                     title="Revocar"
+                                    aria-label={`Revocar link compartido de ${link.document?.name || 'documento'}`}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </button>

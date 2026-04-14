@@ -40,13 +40,13 @@ export function SearchPage() {
         setDebouncedSearch(urlQuery);
     }, [searchParams]);
 
-    const handleSearch = (val: string) => {
-        setSearch(val);
+    const handleSearch = (value: string) => {
+        setSearch(value);
         if (timer) clearTimeout(timer);
         setTimer(setTimeout(() => {
-            setDebouncedSearch(val);
+            setDebouncedSearch(value);
             const nextParams = new URLSearchParams(searchParams);
-            if (val.trim()) nextParams.set('q', val.trim());
+            if (value.trim()) nextParams.set('q', value.trim());
             else nextParams.delete('q');
             setSearchParams(nextParams);
         }, 300));
@@ -82,49 +82,63 @@ export function SearchPage() {
 
     const onCategoryChange = (value: string) => {
         setCategoryId(value);
-        if (value) {
-            setSearchParams({ categoryId: value });
-            return;
-        }
-        setSearchParams({});
+        const nextParams = new URLSearchParams(searchParams);
+        if (value) nextParams.set('categoryId', value);
+        else nextParams.delete('categoryId');
+        setSearchParams(nextParams);
     };
 
     return (
         <div className="space-y-5">
             <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
                 <div>
-                    <p className="text-xs font-semibold tracking-[0.12em] uppercase text-slate-500">Buscar</p>
+                    <label htmlFor="search-documents-input" className="text-xs font-semibold tracking-[0.12em] uppercase text-slate-600">
+                        Buscar
+                    </label>
                     <div className="relative mt-2">
-                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <SearchIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
+                            id="search-documents-input"
                             value={search}
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder="Nombre, categoria, etiqueta..."
-                            className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            aria-label="Buscar documentos por nombre, categoria o etiqueta"
+                            className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-500 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.12em] uppercase text-slate-500 mb-2">Categoria</p>
+                        <label htmlFor="search-category-filter" className="mb-2 block text-xs font-semibold tracking-[0.12em] uppercase text-slate-600">
+                            Categoria
+                        </label>
                         <select
+                            id="search-category-filter"
                             value={categoryId}
                             onChange={(e) => onCategoryChange(e.target.value)}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            aria-label="Filtrar por categoria"
+                            className="h-10 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
                             <option value="">Todas</option>
-                            {categories?.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
+                            {categories?.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
                             ))}
                         </select>
                     </div>
+
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.12em] uppercase text-slate-500 mb-2">Ordenar por</p>
+                        <label htmlFor="search-sort-filter" className="mb-2 block text-xs font-semibold tracking-[0.12em] uppercase text-slate-600">
+                            Ordenar por
+                        </label>
                         <select
+                            id="search-sort-filter"
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'name')}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            aria-label="Ordenar resultados"
+                            className="h-10 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
                             <option value="createdAt">Mas reciente</option>
                             <option value="name">Nombre</option>
@@ -134,10 +148,13 @@ export function SearchPage() {
             </div>
 
             <div>
-                <h2 className="text-lg font-bold text-slate-900">Resultados <span className="text-sm font-normal text-slate-500">{documents.length} encontrados</span></h2>
+                <h2 className="text-lg font-bold text-slate-900">
+                    Resultados <span className="text-sm font-normal text-slate-600">{documents.length} encontrados</span>
+                </h2>
+
                 <div className="mt-4 space-y-2">
                     {documents.length === 0 && (
-                        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500">
+                        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-600">
                             No se encontraron documentos.
                         </div>
                     )}
@@ -155,20 +172,24 @@ export function SearchPage() {
                                     style={{ color: doc.category?.color || '#94a3b8' }}
                                 />
                             </div>
+
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-base font-semibold text-slate-900">{doc.name}</p>
-                                <p className="mt-1 text-sm text-slate-500">
+                                <p className="mt-1 text-sm text-slate-600">
                                     <span className="font-medium" style={{ color: doc.category?.color || '#64748b' }}>
                                         {doc.category?.name || 'Sin categoria'}
                                     </span>
-                                    {' · '}
+                                    {' - '}
                                     {formatBytes(doc.fileSizeBytes)}
-                                    {' · '}
+                                    {' - '}
                                     {new Date(doc.createdAt).toISOString().slice(0, 10)}
                                 </p>
                             </div>
+
                             {isExpired(doc) && (
-                                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">Vencido</span>
+                                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                                    Vencido
+                                </span>
                             )}
                         </button>
                     ))}
@@ -180,8 +201,8 @@ export function SearchPage() {
                 isOpen={!!selectedDoc}
                 onClose={() => setSelectedDoc(null)}
                 onDownload={handleDownload}
-                onDelete={(d) => {
-                    setConfirmDeleteDoc(d);
+                onDelete={(doc) => {
+                    setConfirmDeleteDoc(doc);
                     setSelectedDoc(null);
                 }}
                 onShare={setShareDoc}

@@ -117,7 +117,11 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
             <div className="relative max-h-[90vh] w-full max-w-[760px] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl animate-fade-in">
                 <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5">
                     <h2 className="text-lg font-semibold text-slate-900">Subir documento</h2>
-                    <button onClick={handleClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <button
+                        onClick={handleClose}
+                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="Cerrar modal de subida"
+                    >
                         <X className="h-4 w-4" />
                     </button>
                 </div>
@@ -145,15 +149,21 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                                 <p className="truncate text-sm font-medium text-slate-800">{file.name}</p>
                                 <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
                             </div>
-                            <button type="button" onClick={() => setFile(null)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-200">
+                            <button
+                                type="button"
+                                onClick={() => setFile(null)}
+                                className="rounded-lg p-1 text-slate-500 hover:bg-slate-200"
+                                aria-label="Quitar archivo seleccionado"
+                            >
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
                     )}
 
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700">Nombre *</label>
+                        <label htmlFor="upload-name" className="mb-1 block text-sm font-medium text-slate-700">Nombre *</label>
                         <input
+                            id="upload-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -162,8 +172,9 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
+                        <label htmlFor="upload-category" className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
                         <select
+                            id="upload-category"
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -177,8 +188,9 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
 
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Fecha emision</label>
+                            <label htmlFor="upload-issue-date" className="mb-1 block text-sm font-medium text-slate-700">Fecha emision</label>
                             <input
+                                id="upload-issue-date"
                                 type="date"
                                 value={issueDate}
                                 onChange={(e) => setIssueDate(e.target.value)}
@@ -186,8 +198,9 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                             />
                         </div>
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Fecha vencimiento</label>
+                            <label htmlFor="upload-expiry-date" className="mb-1 block text-sm font-medium text-slate-700">Fecha vencimiento</label>
                             <input
+                                id="upload-expiry-date"
                                 type="date"
                                 value={expiryDate}
                                 onChange={(e) => setExpiryDate(e.target.value)}
@@ -198,16 +211,18 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
 
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Entidad emisora</label>
+                            <label htmlFor="upload-issuing-authority" className="mb-1 block text-sm font-medium text-slate-700">Entidad emisora</label>
                             <input
+                                id="upload-issuing-authority"
                                 value={issuingAuthority}
                                 onChange={(e) => setIssuingAuthority(e.target.value)}
                                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
                         </div>
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Numero de documento</label>
+                            <label htmlFor="upload-document-number" className="mb-1 block text-sm font-medium text-slate-700">Numero de documento</label>
                             <input
+                                id="upload-document-number"
                                 value={documentNumber}
                                 onChange={(e) => setDocumentNumber(e.target.value)}
                                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -216,8 +231,9 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700">Descripcion</label>
+                        <label htmlFor="upload-description" className="mb-1 block text-sm font-medium text-slate-700">Descripcion</label>
                         <textarea
+                            id="upload-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={2}
@@ -226,18 +242,23 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700">Tags</label>
+                        <label htmlFor="upload-tags" className="mb-1 block text-sm font-medium text-slate-700">Tags</label>
                         <div className="mb-2 flex flex-wrap gap-1.5">
                             {tags.map((tag) => (
                                 <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
                                     {tag}
-                                    <button type="button" onClick={() => setTags(tags.filter((value) => value !== tag))}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTags(tags.filter((value) => value !== tag))}
+                                        aria-label={`Quitar etiqueta ${tag}`}
+                                    >
                                         <X className="h-3 w-3" />
                                     </button>
                                 </span>
                             ))}
                         </div>
                         <input
+                            id="upload-tags"
                             value={tagsInput}
                             onChange={(e) => setTagsInput(e.target.value)}
                             onKeyDown={handleAddTag}

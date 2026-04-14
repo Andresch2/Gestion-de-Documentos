@@ -1,9 +1,11 @@
 import { authApi } from '@/api/auth.api';
+import { sharedLinksApi } from '@/api/shared-links.api';
 import { CategoryModal } from '@/components/categories/CategoryModal';
 import { useCategories } from '@/hooks/useCategories';
 import { useDocumentStats } from '@/hooks/useDocuments';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
+import { useQuery } from '@tanstack/react-query';
 import { Clock, Folder, LayoutDashboard, LogOut, Search, Settings, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -26,6 +28,13 @@ export function Sidebar() {
     const user = useAuthStore((s) => s.user);
     const { data: categories } = useCategories();
     const { data: stats } = useDocumentStats();
+    const { data: sharedLinks = [] } = useQuery({
+        queryKey: ['shared-links'],
+        queryFn: async () => {
+            const { data } = await sharedLinksApi.getAll();
+            return (data.data || data) as Array<{ id: string }>;
+        },
+    });
 
     const handleLogout = async () => {
         try {
@@ -44,7 +53,7 @@ export function Sidebar() {
         home: stats?.totalDocs || 0,
         search: stats?.totalDocs || 0,
         expiring: stats?.expiringDocs || 0,
-        shared: 0,
+        shared: sharedLinks.length,
         trash: stats?.deletedDocs || 0,
     };
     const activeCategoryId = new URLSearchParams(location.search).get('categoryId');
@@ -58,13 +67,13 @@ export function Sidebar() {
                     </div>
                     <div>
                         <p className="text-[1.75rem] leading-none font-extrabold tracking-tight text-slate-900">GestorDoc</p>
-                        <p className="text-[13px] text-slate-500">Documentos Importantes</p>
+                        <p className="text-[13px] text-slate-600">Documentos Importantes</p>
                     </div>
                 </div>
             </div>
 
             <nav className="space-y-1 overflow-y-auto px-3 py-3.5">
-                <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Principal</p>
+                <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Principal</p>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -86,7 +95,7 @@ export function Sidebar() {
                 ))}
 
                 <div className="pt-4">
-                    <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Categorias</p>
+                    <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Categorias</p>
                     {(categories || []).map((cat, idx) => (
                         <NavLink
                             key={cat.id}
@@ -108,7 +117,7 @@ export function Sidebar() {
                     ))}
                     <button
                         onClick={() => setCategoryModalOpen(true)}
-                        className="w-full rounded-xl px-3.5 py-2 text-left text-sm text-slate-500 transition-colors hover:bg-slate-100"
+                        className="w-full rounded-xl px-3.5 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
                     >
                         + Nueva categoria
                     </button>
@@ -116,7 +125,7 @@ export function Sidebar() {
             </nav>
 
             <div className="mt-auto border-t border-slate-200 px-4 py-3.5">
-                <div className="mb-2 flex items-center justify-between text-[13px] text-slate-500">
+                <div className="mb-2 flex items-center justify-between text-[13px] text-slate-600">
                     <span>Almacenamiento</span>
                     <span>{formatBytes(usedBytes)} / {formatBytes(quotaBytes)}</span>
                 </div>
@@ -142,6 +151,7 @@ export function Sidebar() {
                             : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
                             }`}
                         title="Configuracion"
+                        aria-label="Abrir configuracion"
                     >
                         <Settings className="w-4 h-4" />
                     </button>
@@ -149,6 +159,7 @@ export function Sidebar() {
                         onClick={handleLogout}
                         className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500"
                         title="Cerrar sesion"
+                        aria-label="Cerrar sesion"
                     >
                         <LogOut className="w-4 h-4" />
                     </button>

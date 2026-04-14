@@ -47,6 +47,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                                 onClick={(e) => { e.stopPropagation(); onDownload?.(doc); }}
                                 className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Descargar"
+                                aria-label={`Descargar ${doc.name}`}
                             >
                                 <Download className="h-4 w-4" />
                             </button>
@@ -54,6 +55,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                                 onClick={(e) => { e.stopPropagation(); onEdit?.(doc); }}
                                 className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Editar"
+                                aria-label={`Editar ${doc.name}`}
                             >
                                 <Pencil className="h-4 w-4" />
                             </button>
@@ -61,6 +63,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                                 onClick={(e) => { e.stopPropagation(); onShare?.(doc); }}
                                 className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
                                 title="Compartir"
+                                aria-label={`Compartir ${doc.name}`}
                             >
                                 <Share2 className="h-4 w-4" />
                             </button>
@@ -68,6 +71,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                                 onClick={(e) => { e.stopPropagation(); onDelete?.(doc); }}
                                 className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-red-500/30"
                                 title="Eliminar"
+                                aria-label={`Eliminar ${doc.name}`}
                             >
                                 <Trash2 className="h-4 w-4" />
                             </button>
@@ -78,6 +82,7 @@ export function DocumentCard({ document: doc, onDownload, onDelete, onRestore, o
                             onClick={(e) => { e.stopPropagation(); onRestore?.(doc); }}
                             className="rounded-lg bg-white/10 p-2 text-white transition-colors hover:bg-green-500/30"
                             title="Restaurar"
+                            aria-label={`Restaurar ${doc.name}`}
                         >
                             <RotateCcw className="h-4 w-4" />
                         </button>

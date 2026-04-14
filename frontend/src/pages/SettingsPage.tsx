@@ -273,12 +273,12 @@ export function SettingsPage() {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
-                            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+                            <label htmlFor="settings-profile-name" className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
+                            <input id="settings-profile-name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} />
+                            <label htmlFor="settings-profile-email" className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                            <input id="settings-profile-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} />
                         </div>
                     </div>
 
@@ -327,8 +327,9 @@ export function SettingsPage() {
 
                             <div className="grid gap-4 md:grid-cols-[1fr_180px]">
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
+                                    <label htmlFor="settings-category-name" className="mb-1.5 block text-sm font-medium text-slate-700">Nombre</label>
                                     <input
+                                        id="settings-category-name"
                                         value={catName}
                                         onChange={(e) => setCatName(e.target.value)}
                                         placeholder="Ej: Impuestos"
@@ -361,6 +362,7 @@ export function SettingsPage() {
                                                 ? 'border-blue-300 bg-blue-50 text-blue-700'
                                                 : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800'
                                                 }`}
+                                            aria-label={`Seleccionar icono ${iconName}`}
                                         >
                                             <CategoryIcon name={iconName} className="h-4 w-4" />
                                         </button>
@@ -418,6 +420,7 @@ export function SettingsPage() {
                                             onClick={() => startEdit(category)}
                                             className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
                                             title="Editar"
+                                            aria-label={`Editar categoria ${category.name}`}
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </button>
@@ -425,6 +428,7 @@ export function SettingsPage() {
                                             onClick={() => handleDeleteCategory(category)}
                                             className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600"
                                             title="Eliminar"
+                                            aria-label={`Eliminar categoria ${category.name}`}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
@@ -445,16 +449,16 @@ export function SettingsPage() {
                     <h2 className="text-lg font-semibold text-slate-900">Cambiar contrasena</h2>
                     <div className="mt-5 space-y-4">
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Contrasena actual</label>
-                            <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password" className={inputClass} />
+                            <label htmlFor="settings-current-password" className="mb-1.5 block text-sm font-medium text-slate-700">Contrasena actual</label>
+                            <input id="settings-current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password" className={inputClass} />
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Nueva contrasena</label>
-                            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" className={inputClass} />
+                            <label htmlFor="settings-new-password" className="mb-1.5 block text-sm font-medium text-slate-700">Nueva contrasena</label>
+                            <input id="settings-new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" className={inputClass} />
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Confirmar nueva contrasena</label>
-                            <input value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} type="password" className={inputClass} />
+                            <label htmlFor="settings-confirm-password" className="mb-1.5 block text-sm font-medium text-slate-700">Confirmar nueva contrasena</label>
+                            <input id="settings-confirm-password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} type="password" className={inputClass} />
                         </div>
                     </div>
 

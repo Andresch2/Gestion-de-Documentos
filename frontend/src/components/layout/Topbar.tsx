@@ -68,12 +68,17 @@ export function Topbar() {
             <h1 className="whitespace-nowrap text-[20px] font-extrabold tracking-tight text-slate-900">{title}</h1>
 
             <div className="relative w-full max-w-[380px]">
+                <label htmlFor="topbar-search" className="sr-only">
+                    Buscar documentos
+                </label>
                 <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
+                    id="topbar-search"
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     placeholder="Buscar documentos..."
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100/90 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    aria-label="Buscar documentos"
+                    className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-500 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
             </div>
 
@@ -82,6 +87,7 @@ export function Topbar() {
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                        aria-label="Abrir notificaciones"
                     >
                         <Bell className="w-5 h-5" />
                         {unreadCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />}

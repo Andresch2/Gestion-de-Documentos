@@ -1,6 +1,7 @@
 import { resolveApiUrl } from '@/api/client';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import type { Document } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ShareModal({ document: doc, isOpen, onClose }: Props) {
+    const queryClient = useQueryClient();
     const [expiresIn, setExpiresIn] = useState('24h');
     const [isOneTime, setIsOneTime] = useState(false);
     const [shareUrl, setShareUrl] = useState('');
@@ -28,6 +30,7 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
             });
             const result = data.data || data;
             setShareUrl(resolveApiUrl(`/shared-links/open/${result.token}`));
+            queryClient.invalidateQueries({ queryKey: ['shared-links'] });
         } catch (err) {
             console.error('Failed to create share link:', err);
         } finally {
@@ -57,7 +60,11 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
             <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl animate-fade-in">
                 <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5">
                     <h2 className="text-lg font-semibold text-slate-900">Compartir documento</h2>
-                    <button onClick={handleClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <button
+                        onClick={handleClose}
+                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="Cerrar modal de compartir"
+                    >
                         <X className="h-4 w-4" />
                     </button>
                 </div>
@@ -115,6 +122,7 @@ export function ShareModal({ document: doc, isOpen, onClose }: Props) {
                                 <button
                                     onClick={handleCopy}
                                     className="rounded-lg bg-blue-50 px-3 py-2 text-blue-600 transition-colors hover:bg-blue-100"
+                                    aria-label="Copiar link compartido"
                                 >
                                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 </button>
