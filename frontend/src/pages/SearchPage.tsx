@@ -121,11 +121,22 @@ export function SearchPage() {
                             className="h-10 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
                             <option value="">Todas</option>
-                            {categories?.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
+                            {(() => {
+                                const organized = categories?.filter((c) => !c.parentId).map((parent) => [
+                                    parent,
+                                    ...(categories?.filter((c) => c.parentId === parent.id) || [])
+                                ]).flat() || [];
+
+                                const orphanIds = organized.map(c => c.id);
+                                const orphans = categories?.filter(c => !orphanIds.includes(c.id)) || [];
+                                const allToRender = [...organized, ...orphans];
+
+                                return allToRender.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.parentId ? `  ↳ ${category.name}` : category.name}
+                                    </option>
+                                ));
+                            })()}
                         </select>
                     </div>
 

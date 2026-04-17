@@ -96,25 +96,37 @@ export function Sidebar() {
 
                 <div className="pt-4">
                     <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Categorias</p>
-                    {(categories || []).map((cat, idx) => (
-                        <NavLink
-                            key={cat.id}
-                            to={`/search?categoryId=${cat.id}`}
-                            className={`flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm transition-colors ${location.pathname === '/search' && activeCategoryId === cat.id
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'text-slate-700 hover:bg-slate-100'
-                                }`}
-                        >
-                            <span
-                                className="w-2.5 h-2.5 rounded-full"
-                                style={{ backgroundColor: cat.color || fallbackCategoryColors[idx % fallbackCategoryColors.length] }}
-                            />
-                            <span className="font-medium">{cat.name}</span>
-                            <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
-                                {cat._count?.documents || 0}
-                            </span>
-                        </NavLink>
-                    ))}
+                    {(() => {
+                        const organized = categories?.filter((c) => !c.parentId).map((parent) => [
+                            parent,
+                            ...(categories?.filter((c) => c.parentId === parent.id) || [])
+                        ]).flat() || [];
+
+                        const orphanIds = organized.map(c => c.id);
+                        const orphans = categories?.filter(c => !orphanIds.includes(c.id)) || [];
+                        const allToRender = [...organized, ...orphans];
+
+                        return allToRender.map((cat, idx) => (
+                            <NavLink
+                                key={cat.id}
+                                to={`/search?categoryId=${cat.id}`}
+                                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] transition-colors ${location.pathname === '/search' && activeCategoryId === cat.id
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'text-slate-700 hover:bg-slate-100'
+                                    } ${cat.parentId ? 'pl-8' : ''}`}
+                            >
+                                {cat.parentId && <span className="text-slate-400">↳</span>}
+                                <span
+                                    className="w-2 h-2 rounded-full hidden sm:block"
+                                    style={{ backgroundColor: cat.color || fallbackCategoryColors[idx % fallbackCategoryColors.length] }}
+                                />
+                                <span className={`font-medium ${cat.parentId ? 'opacity-80' : ''}`}>{cat.name}</span>
+                                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                    {cat._count?.documents || 0}
+                                </span>
+                            </NavLink>
+                        ));
+                    })()}
                     <button
                         onClick={() => setCategoryModalOpen(true)}
                         className="w-full rounded-xl px-3.5 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"

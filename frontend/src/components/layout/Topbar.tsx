@@ -1,4 +1,4 @@
-﻿import { useNotifications, useReadAllNotifications, useReadNotification } from '@/hooks/useNotifications';
+import { useNotifications, useReadAllNotifications, useReadNotification } from '@/hooks/useNotifications';
 import { formatDate } from '@/lib/utils';
 import { Bell, Plus, Search, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -140,12 +140,6 @@ export function Topbar() {
                     )}
                 </div>
 
-                <button
-                    onClick={openUpload}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                    <Upload className="w-4 h-4" /> Subir
-                </button>
                 <button
                     onClick={openUpload}
                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
