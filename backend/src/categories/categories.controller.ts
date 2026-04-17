@@ -25,6 +25,11 @@ export class CreateCategoryDto {
     @IsString()
     color?: string;
 
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    parentId?: string;
+
     @ApiPropertyOptional({ example: '📚' })
     @IsOptional()
     @IsString()
@@ -42,6 +47,11 @@ export class UpdateCategoryDto {
     @IsOptional()
     @IsString()
     color?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    parentId?: string;
 
     @ApiPropertyOptional()
     @IsOptional()

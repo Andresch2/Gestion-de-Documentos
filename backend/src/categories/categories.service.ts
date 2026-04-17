@@ -27,7 +27,7 @@ export class CategoriesService {
         });
     }
 
-    async create(userId: string, data: { name: string; color?: string; icon?: string }) {
+    async create(userId: string, data: { name: string; color?: string; icon?: string; parentId?: string }) {
         const name = data.name?.trim();
         if (!name) throw new BadRequestException('El nombre de la categoria es obligatorio');
 
@@ -45,12 +45,20 @@ export class CategoriesService {
             throw new ConflictException('Ya existe una categoria con ese nombre');
         }
 
+        if (data.parentId) {
+            const parent = await this.prisma.category.findUnique({ where: { id: data.parentId } });
+            if (!parent || parent.userId !== userId) {
+                throw new BadRequestException('La categoría padre no existe o no te pertenece');
+            }
+        }
+
         return this.prisma.category.create({
             data: {
                 userId,
                 name,
                 color: data.color || '#4f8ef7',
                 icon: data.icon || 'Folder',
+                parentId: data.parentId || null,
             },
         });
     }
@@ -58,7 +66,7 @@ export class CategoriesService {
     async update(
         id: string,
         userId: string,
-        data: { name?: string; color?: string; icon?: string },
+        data: { name?: string; color?: string; icon?: string; parentId?: string },
     ) {
         const category = await this.prisma.category.findUnique({ where: { id } });
         if (!category) throw new NotFoundException('Categoria no encontrada');
@@ -86,11 +94,22 @@ export class CategoriesService {
             }
         }
 
+        if (data.parentId) {
+            if (data.parentId === id) {
+                throw new BadRequestException('Una categoría no puede ser padre de sí misma');
+            }
+            const parent = await this.prisma.category.findUnique({ where: { id: data.parentId } });
+            if (!parent || parent.userId !== userId) {
+                throw new BadRequestException('La categoría padre no existe o no te pertenece');
+            }
+        }
+
         return this.prisma.category.update({
             where: { id },
             data: {
                 ...data,
                 name: name ?? data.name,
+                parentId: data.parentId !== undefined ? data.parentId || null : category.parentId,
             },
         });
     }

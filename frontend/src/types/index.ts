@@ -10,6 +10,7 @@ export interface User {
 export interface Category {
     id: string;
     userId: string;
+    parentId?: string | null;
     name: string;
     color: string;
     icon: string;

@@ -1,5 +1,5 @@
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { useCreateCategory } from '@/hooks/useCategories';
+import { useCategories, useCreateCategory } from '@/hooks/useCategories';
 import { Folder, Home, Receipt, Scale, Shield, Heart, Briefcase, Car, GraduationCap, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -24,9 +24,11 @@ const previewIcons = [Folder, Home, Receipt, Scale, Shield, Heart, Briefcase, Ca
 
 export function CategoryModal({ isOpen, onClose }: Props) {
     const createCategory = useCreateCategory();
+    const { data: categories } = useCategories();
     const [name, setName] = useState('');
     const [color, setColor] = useState('#4f8ef7');
     const [icon, setIcon] = useState('Folder');
+    const [parentId, setParentId] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -34,6 +36,7 @@ export function CategoryModal({ isOpen, onClose }: Props) {
         setName('');
         setColor('#4f8ef7');
         setIcon('Folder');
+        setParentId('');
         setError('');
     }, [isOpen]);
 
@@ -48,6 +51,7 @@ export function CategoryModal({ isOpen, onClose }: Props) {
                 name: name.trim(),
                 color,
                 icon,
+                parentId: parentId || undefined,
             });
             onClose();
         } catch (err: any) {
@@ -95,6 +99,22 @@ export function CategoryModal({ isOpen, onClose }: Props) {
                             placeholder="Ej: Impuestos"
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
                         />
+                    </div>
+
+                    <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Categoría padre (Opcional)</label>
+                        <select
+                            value={parentId}
+                            onChange={(e) => setParentId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                        >
+                            <option value="">Sin categoría padre</option>
+                            {categories?.filter((c) => !c.parentId).map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-[1fr_auto] items-end gap-3">

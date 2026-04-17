@@ -61,6 +61,7 @@ export function SettingsPage() {
     const [catName, setCatName] = useState('');
     const [catColor, setCatColor] = useState('#4f8ef7');
     const [catIcon, setCatIcon] = useState('Folder');
+    const [catParentId, setCatParentId] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [categoryMsg, setCategoryMsg] = useState('');
 
@@ -100,6 +101,7 @@ export function SettingsPage() {
         setCatName('');
         setCatColor('#4f8ef7');
         setCatIcon('Folder');
+        setCatParentId('');
         setCategoryMsg('');
     };
 
@@ -156,6 +158,7 @@ export function SettingsPage() {
                 name: catName.trim(),
                 color: catColor,
                 icon: catIcon,
+                parentId: catParentId || undefined,
             });
             resetCategoryForm();
         } catch (err) {
@@ -174,6 +177,7 @@ export function SettingsPage() {
                     name: catName.trim(),
                     color: catColor,
                     icon: catIcon,
+                    parentId: catParentId || undefined,
                 },
             });
             resetCategoryForm();
@@ -197,6 +201,7 @@ export function SettingsPage() {
         setCatName(category.name);
         setCatColor(category.color);
         setCatIcon(category.icon || 'Folder');
+        setCatParentId(category.parentId || '');
         setCategoryMsg('');
     };
 
@@ -206,6 +211,7 @@ export function SettingsPage() {
         setCatName('');
         setCatColor('#4f8ef7');
         setCatIcon('Folder');
+        setCatParentId('');
         setCategoryMsg('');
     };
 
@@ -348,6 +354,21 @@ export function SettingsPage() {
                                         <span className="text-sm font-medium text-slate-600">{catColor}</span>
                                     </div>
                                 </div>
+                                <div className="md:col-span-2">
+                                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Categoría padre (Opcional)</label>
+                                    <select
+                                        value={catParentId}
+                                        onChange={(e) => setCatParentId(e.target.value)}
+                                        className={inputClass}
+                                    >
+                                        <option value="">Sin categoría padre</option>
+                                        {categories?.filter((c) => !c.parentId && c.id !== editingCatId).map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div>
@@ -397,44 +418,57 @@ export function SettingsPage() {
                                 <div key={index} className="h-20 rounded-2xl border border-slate-200 bg-white animate-pulse" />
                             ))
                         ) : categories?.length ? (
-                            categories.map((category) => (
-                                <div key={category.id} className={`${panelClass} flex items-center justify-between`}>
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className="flex h-11 w-11 items-center justify-center rounded-2xl border"
-                                            style={{
-                                                backgroundColor: `${category.color}18`,
-                                                color: category.color,
-                                                borderColor: `${category.color}40`,
-                                            }}
-                                        >
-                                            <CategoryIcon name={category.icon || 'Folder'} className="h-5 w-5" />
+                            (() => {
+                                const organized = categories.filter((c) => !c.parentId).map((parent) => [
+                                    parent,
+                                    ...categories.filter((c) => c.parentId === parent.id)
+                                ]).flat();
+
+                                // Include any orphans if they somehow exist
+                                const orphanIds = organized.map(c => c.id);
+                                const orphans = categories.filter(c => !orphanIds.includes(c.id));
+                                const allToRender = [...organized, ...orphans];
+
+                                return allToRender.map((category) => (
+                                    <div key={category.id} className={`${panelClass} flex items-center justify-between ${category.parentId ? 'ml-8 bg-slate-50 border-slate-200/60 shadow-none' : ''}`}>
+                                        <div className="flex items-center gap-3">
+                                            {category.parentId && <span className="text-slate-400">↳</span>}
+                                            <div
+                                                className={`flex items-center justify-center rounded-2xl border ${category.parentId ? 'h-9 w-9' : 'h-11 w-11'}`}
+                                                style={{
+                                                    backgroundColor: `${category.color}18`,
+                                                    color: category.color,
+                                                    borderColor: `${category.color}40`,
+                                                }}
+                                            >
+                                                <CategoryIcon name={category.icon || 'Folder'} className={`${category.parentId ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[15px] font-semibold text-slate-900">{category.name}</p>
+                                                <p className="text-sm text-slate-500">{category._count?.documents || 0} documentos</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-[15px] font-semibold text-slate-900">{category.name}</p>
-                                            <p className="text-sm text-slate-500">{category._count?.documents || 0} documentos</p>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => startEdit(category)}
+                                                className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                                                title="Editar"
+                                                aria-label={`Editar categoria ${category.name}`}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteCategory(category)}
+                                                className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600"
+                                                title="Eliminar"
+                                                aria-label={`Eliminar categoria ${category.name}`}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => startEdit(category)}
-                                            className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
-                                            title="Editar"
-                                            aria-label={`Editar categoria ${category.name}`}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteCategory(category)}
-                                            className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600"
-                                            title="Eliminar"
-                                            aria-label={`Eliminar categoria ${category.name}`}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
+                                ));
+                            })()
                         ) : (
                             <div className={`${panelClass} md:col-span-2 text-center`}>
                                 <p className="text-sm text-slate-500">No tienes categorias personalizadas todavia.</p>

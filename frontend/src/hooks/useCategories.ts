@@ -15,7 +15,7 @@ export function useCategories() {
 export function useCreateCategory() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: { name: string; color?: string; icon?: string }) =>
+        mutationFn: (data: { name: string; color?: string; icon?: string; parentId?: string }) =>
             categoriesApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -27,7 +27,7 @@ export function useCreateCategory() {
 export function useUpdateCategory() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string; icon?: string } }) =>
+        mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string; icon?: string; parentId?: string } }) =>
             categoriesApi.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });

@@ -180,9 +180,22 @@ export function UploadModal({ isOpen, onClose, initialFile }: Props) {
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
                             <option value="">Sin categoria</option>
-                            {categories?.map((category) => (
-                                <option key={category.id} value={category.id}>{category.name}</option>
-                            ))}
+                            {(() => {
+                                const organized = categories?.filter((c) => !c.parentId).map((parent) => [
+                                    parent,
+                                    ...(categories?.filter((c) => c.parentId === parent.id) || [])
+                                ]).flat() || [];
+
+                                const orphanIds = organized.map(c => c.id);
+                                const orphans = categories?.filter(c => !orphanIds.includes(c.id)) || [];
+                                const allToRender = [...organized, ...orphans];
+
+                                return allToRender.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.parentId ? `  ↳ ${category.name}` : category.name}
+                                    </option>
+                                ));
+                            })()}
                         </select>
                     </div>
 
