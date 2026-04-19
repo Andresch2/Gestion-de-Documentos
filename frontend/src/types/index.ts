@@ -4,6 +4,7 @@ export interface User {
     name: string;
     storageUsedBytes: string;
     storageQuotaBytes: string;
+    avatarUrl?: string;
     createdAt?: string;
 }
 

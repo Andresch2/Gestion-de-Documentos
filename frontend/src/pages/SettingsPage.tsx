@@ -6,7 +6,8 @@ import { useAuthStore } from '@/store/auth.store';
 import type { Category, User } from '@/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Bell, Download, FolderOpen, HardDrive, Pencil, Plus, Settings, Shield, Trash2, User as UserIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 type SettingsTab = 'profile' | 'categories' | 'security' | 'notifications' | 'storage';
 
@@ -40,6 +41,8 @@ export function SettingsPage() {
     const storedUser = useAuthStore((state) => state.user);
     const updateUser = useAuthStore((state) => state.updateUser);
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const [name, setName] = useState(storedUser?.name || '');
@@ -85,6 +88,7 @@ export function SettingsPage() {
             email: me.email,
             storageUsedBytes: me.storageUsedBytes,
             storageQuotaBytes: me.storageQuotaBytes,
+            avatarUrl: me.avatarUrl,
         });
         setName(me.name || '');
         setEmail(me.email || '');
@@ -117,6 +121,7 @@ export function SettingsPage() {
                 email: result.email,
                 storageUsedBytes: result.storageUsedBytes,
                 storageQuotaBytes: result.storageQuotaBytes,
+                avatarUrl: result.avatarUrl,
             });
             await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
             setProfileMsg('Perfil actualizado correctamente');
@@ -146,6 +151,31 @@ export function SettingsPage() {
             setPasswordMsg(extractErrorMessage(err, 'No se pudo cambiar la contrasena'));
         } finally {
             setPasswordLoading(false);
+        }
+    };
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const { data } = await usersApi.uploadAvatar(file);
+            const result = (data.data || data) as User;
+            updateUser({ avatarUrl: result.avatarUrl });
+            await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+        } catch (err) {
+            alert('Error al subir imagen. Revise el tamaño o formato del archivo.');
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        const confirmed = confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y borrará todos tus documentos permanentemente.');
+        if (!confirmed) return;
+        try {
+            await usersApi.deleteMe();
+            useAuthStore.getState().logout();
+            navigate('/login');
+        } catch (err) {
+            alert(extractErrorMessage(err, 'No se pudo eliminar la cuenta. Intenta de nuevo.'));
         }
     };
 
@@ -268,8 +298,20 @@ export function SettingsPage() {
             {activeTab === 'profile' && (
                 <div className={panelClass}>
                     <div className="mb-5 flex items-center gap-4">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xl font-bold text-white">
-                            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+                        <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xl font-bold text-white cursor-pointer overflow-hidden group border border-slate-200"
+                            title="Cambiar foto de perfil"
+                        >
+                            {currentUser?.avatarUrl ? (
+                                <img src={`${import.meta.env.VITE_API_URL}/users/${currentUser.id}/avatar?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span>{currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                            )}
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] text-white uppercase font-bold tracking-wider">Subir</span>
+                            </div>
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-slate-900">{currentUser?.name || 'Usuario'}</h2>
@@ -512,14 +554,6 @@ export function SettingsPage() {
                     >
                         {passwordLoading ? 'Actualizando...' : 'Cambiar contrasena'}
                     </button>
-
-                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                        <div className="flex items-center gap-2 text-slate-800">
-                            <Shield className="h-4 w-4 text-blue-600" />
-                            <p className="text-sm font-semibold">Autenticacion de dos factores</p>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-500">Proximamente disponible.</p>
-                    </div>
                 </div>
             )}
 
@@ -603,10 +637,10 @@ export function SettingsPage() {
                             <AlertTriangle className="h-5 w-5" />
                             Zona de peligro
                         </h2>
-                        <p className="mt-2 text-sm text-red-500">La eliminacion de cuenta aun no esta habilitada en esta version.</p>
+                        <p className="mt-2 text-sm text-red-500">Al eliminar tu cuenta, todos tus documentos y configuraciones se borrarán de forma permanente. Esta acción no se puede deshacer.</p>
                         <button
-                            disabled
-                            className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-400 opacity-70"
+                            onClick={handleDeleteAccount}
+                            className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                         >
                             Eliminar cuenta
                         </button>

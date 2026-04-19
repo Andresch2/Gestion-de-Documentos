@@ -11,4 +11,14 @@ export const usersApi = {
 
     exportData: () =>
         apiClient.get('/users/me/export', { responseType: 'blob' }),
+
+    deleteMe: () => apiClient.delete('/users/me'),
+
+    uploadAvatar: (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiClient.post('/users/me/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
 };

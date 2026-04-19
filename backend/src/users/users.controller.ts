@@ -1,12 +1,20 @@
 import {
+    BadRequestException,
     Body,
     Controller,
+    Delete,
     Get,
+    NotFoundException,
+    Param,
     Patch,
+    Post,
     Res,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -57,5 +65,46 @@ export class UsersController {
             `attachment; filename="gestordoc-export-${dateStr}.json"`,
         );
         return data;
+    }
+
+    @Delete('me')
+    @ApiOperation({ summary: 'Eliminar cuenta' })
+    async remove(@CurrentUser('id') userId: string) {
+        return this.usersService.remove(userId);
+    }
+
+    @Post('me/avatar')
+    @ApiOperation({ summary: 'Subir avatar de perfil' })
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadAvatar(
+        @CurrentUser('id') userId: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('El archivo es requerido');
+        }
+        if (!file.mimetype.startsWith('image/')) {
+            throw new BadRequestException('El archivo debe ser una imagen');
+        }
+        return this.usersService.uploadAvatar(userId, file);
+    }
+
+    @Get(':id/avatar')
+    @ApiOperation({ summary: 'Obtener avatar de usuario' })
+    async getAvatar(
+        @Param('id') id: string,
+        @Res() res: Response,
+    ) {
+        const user = await this.usersService.findMe(id);
+        if (!user.avatarUrl) throw new NotFoundException('Avatar no encontrado');
+        
+        try {
+            const storedFile = await this.usersService.getAvatar(user.avatarUrl);
+            res.type(storedFile.contentType || 'image/jpeg');
+            res.send(storedFile.buffer);
+        } catch(e) {
+            throw new NotFoundException('Avatar no encontrado');
+        }
     }
 }

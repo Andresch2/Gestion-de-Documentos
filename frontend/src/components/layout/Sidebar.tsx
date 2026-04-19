@@ -6,7 +6,7 @@ import { useDocumentStats } from '@/hooks/useDocuments';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { useQuery } from '@tanstack/react-query';
-import { Clock, Folder, LayoutDashboard, LogOut, Search, Settings, Share2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Folder, LayoutDashboard, LogOut, Search, Settings, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
@@ -22,6 +22,14 @@ const fallbackCategoryColors = ['#2563eb', '#16a34a', '#dc2626', '#7c3aed', '#ea
 
 export function Sidebar() {
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+    const toggleCategory = (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+    };
+
     const navigate = useNavigate();
     const location = useLocation();
     const logout = useAuthStore((s) => s.logout);
@@ -96,37 +104,85 @@ export function Sidebar() {
 
                 <div className="pt-4">
                     <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Categorias</p>
-                    {(() => {
-                        const organized = categories?.filter((c) => !c.parentId).map((parent) => [
-                            parent,
-                            ...(categories?.filter((c) => c.parentId === parent.id) || [])
-                        ]).flat() || [];
+                    <div className="flex flex-col space-y-0.5">
+                        {(() => {
+                            const rootCategories = categories?.filter((c) => !c.parentId) || [];
+                            const childrenByParent = categories?.reduce((acc, cat) => {
+                                if (cat.parentId) {
+                                    if (!acc[cat.parentId]) acc[cat.parentId] = [];
+                                    acc[cat.parentId].push(cat);
+                                }
+                                return acc;
+                            }, {} as Record<string, typeof categories>) || {};
 
-                        const orphanIds = organized.map(c => c.id);
-                        const orphans = categories?.filter(c => !orphanIds.includes(c.id)) || [];
-                        const allToRender = [...organized, ...orphans];
+                            const validParentIds = new Set(rootCategories.map(c => c.id));
+                            const orphanChildren = categories?.filter(c => c.parentId && !validParentIds.has(c.parentId)) || [];
+                            const allRoots = [...rootCategories, ...orphanChildren];
 
-                        return allToRender.map((cat, idx) => (
-                            <NavLink
-                                key={cat.id}
-                                to={`/search?categoryId=${cat.id}`}
-                                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] transition-colors ${location.pathname === '/search' && activeCategoryId === cat.id
-                                    ? 'bg-blue-50 text-blue-700'
-                                    : 'text-slate-700 hover:bg-slate-100'
-                                    } ${cat.parentId ? 'pl-8' : ''}`}
-                            >
-                                {cat.parentId && <span className="text-slate-400">↳</span>}
-                                <span
-                                    className="w-2 h-2 rounded-full hidden sm:block"
-                                    style={{ backgroundColor: cat.color || fallbackCategoryColors[idx % fallbackCategoryColors.length] }}
-                                />
-                                <span className={`font-medium ${cat.parentId ? 'opacity-80' : ''}`}>{cat.name}</span>
-                                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                                    {cat._count?.documents || 0}
-                                </span>
-                            </NavLink>
-                        ));
-                    })()}
+                            return allRoots.map((parent, idx) => {
+                                const children = childrenByParent[parent.id] || [];
+                                const hasChildren = children.length > 0;
+                                const isExpanded = expandedCategories[parent.id];
+                                
+                                return (
+                                    <div key={parent.id} className="flex flex-col space-y-0.5">
+                                        <NavLink
+                                            to={`/search?categoryId=${parent.id}`}
+                                            className={`flex items-center gap-2 rounded-xl py-2 px-2 text-[13px] transition-colors ${
+                                                location.pathname === '/search' && activeCategoryId === parent.id
+                                                    ? 'bg-blue-50 text-blue-700'
+                                                    : 'text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            <div 
+                                                onClick={(e) => {
+                                                    if (hasChildren) toggleCategory(e, parent.id);
+                                                }}
+                                                className={`flex items-center justify-center w-5 h-5 rounded cursor-pointer transition-colors ${
+                                                    hasChildren 
+                                                        ? 'hover:bg-slate-200/50 text-slate-500' 
+                                                        : 'opacity-0 pointer-events-none'
+                                                }`}
+                                            >
+                                                {hasChildren && (isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />)}
+                                            </div>
+
+                                            <span
+                                                className="w-2 h-2 rounded-full hidden sm:block shrink-0 -ml-1"
+                                                style={{ backgroundColor: parent.color || fallbackCategoryColors[idx % fallbackCategoryColors.length] }}
+                                            />
+                                            <span className="font-medium truncate">{parent.name}</span>
+                                            <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 shrink-0">
+                                                {parent._count?.documents || 0}
+                                            </span>
+                                        </NavLink>
+                                        
+                                        {isExpanded && children.map((child, childIdx) => (
+                                            <NavLink
+                                                key={child.id}
+                                                to={`/search?categoryId=${child.id}`}
+                                                className={`flex items-center gap-2 rounded-xl py-2 px-2 pl-9 text-[13px] transition-colors ${
+                                                    location.pathname === '/search' && activeCategoryId === child.id
+                                                        ? 'bg-blue-50 text-blue-700'
+                                                        : 'text-slate-700 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                <span className="text-slate-300 shrink-0 w-3.5">↳</span>
+                                                <span
+                                                    className="w-2 h-2 rounded-full hidden sm:block shrink-0 -ml-1"
+                                                    style={{ backgroundColor: child.color || fallbackCategoryColors[(idx + childIdx + 1) % fallbackCategoryColors.length] }}
+                                                />
+                                                <span className="font-medium opacity-80 truncate">{child.name}</span>
+                                                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 shrink-0">
+                                                    {child._count?.documents || 0}
+                                                </span>
+                                            </NavLink>
+                                        ))}
+                                    </div>
+                                );
+                            });
+                        })()}
+                    </div>
                     <button
                         onClick={() => setCategoryModalOpen(true)}
                         className="w-full rounded-xl px-3.5 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
@@ -149,8 +205,12 @@ export function Sidebar() {
                 </div>
 
                 <div className="flex items-center gap-3 px-1">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xs font-semibold text-white">
-                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xs font-semibold text-white overflow-hidden shrink-0">
+                        {user?.avatarUrl ? (
+                            <img src={`${import.meta.env.VITE_API_URL}/users/${user.id}/avatar?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            user?.name?.charAt(0).toUpperCase() || 'U'
+                        )}
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-semibold text-slate-900">{user?.name}</p>

@@ -8,9 +8,14 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChangePasswordDto, UpdateUserDto } from './dto/update-user.dto';
 
+import { StorageService } from '../storage/storage.service';
+
 @Injectable()
 export class UsersService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly storageService: StorageService
+    ) { }
 
     async findMe(userId: string) {
         const user = await this.prisma.user.findUnique({
@@ -129,5 +134,65 @@ export class UsersService {
                 updatedAt: doc.updatedAt,
             })),
         };
+    }
+
+    async remove(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: { documents: true },
+        });
+
+        if (!user) {
+            throw new NotFoundException('Usuario no encontrado');
+        }
+
+        for (const doc of user.documents) {
+            try {
+                await this.storageService.delete(doc.fileKey);
+            } catch (err) {
+                console.error(`Error deleting file for doc ${doc.id}: ${err}`);
+            }
+        }
+
+        if (user.avatarUrl) {
+            try {
+                await this.storageService.delete(user.avatarUrl);
+            } catch(e) {}
+        }
+
+        await this.prisma.user.delete({ where: { id: userId } });
+        return { message: 'Cuenta eliminada exitosamente' };
+    }
+
+    async uploadAvatar(userId: string, file: Express.Multer.File) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+        
+        if (user.avatarUrl) {
+            try {
+                await this.storageService.delete(user.avatarUrl);
+            } catch(e) {}
+        }
+        
+        const fileExtension = file.originalname.split('.').pop() || 'jpg';
+        const fileKey = `avatars/${userId}-${Date.now()}.${fileExtension}`;
+        
+        await this.storageService.upload(fileKey, file.buffer, file.mimetype);
+        
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data: { avatarUrl: fileKey }
+        });
+        
+        const { passwordHash, refreshTokenHash, ...result } = updated;
+        return {
+            ...result,
+            storageUsedBytes: result.storageUsedBytes.toString(),
+            storageQuotaBytes: result.storageQuotaBytes.toString(),
+        };
+    }
+
+    async getAvatar(fileKey: string) {
+        return this.storageService.download(fileKey);
     }
 }
