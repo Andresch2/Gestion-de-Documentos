@@ -1,5 +1,6 @@
 import { usersApi } from '@/api/users.api';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { AvatarImage } from '@/components/ui/AvatarImage';
 import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -304,7 +305,7 @@ export function SettingsPage() {
                             title="Cambiar foto de perfil"
                         >
                             {currentUser?.avatarUrl ? (
-                                <img src={`${import.meta.env.VITE_API_URL}/users/${currentUser.id}/avatar?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+                                <AvatarImage userId={currentUser.id} avatarUrl={currentUser.avatarUrl} className="w-full h-full object-cover" />
                             ) : (
                                 <span>{currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>
                             )}

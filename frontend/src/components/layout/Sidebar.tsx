@@ -1,6 +1,7 @@
 import { authApi } from '@/api/auth.api';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import { CategoryModal } from '@/components/categories/CategoryModal';
+import { AvatarImage } from '@/components/ui/AvatarImage';
 import { useCategories } from '@/hooks/useCategories';
 import { useDocumentStats } from '@/hooks/useDocuments';
 import { formatBytes } from '@/lib/utils';
@@ -207,7 +208,7 @@ export function Sidebar() {
                 <div className="flex items-center gap-3 px-1">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-500 text-xs font-semibold text-white overflow-hidden shrink-0">
                         {user?.avatarUrl ? (
-                            <img src={`${import.meta.env.VITE_API_URL}/users/${user.id}/avatar?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+                            <AvatarImage userId={user.id} avatarUrl={user.avatarUrl} className="w-full h-full object-cover" />
                         ) : (
                             user?.name?.charAt(0).toUpperCase() || 'U'
                         )}

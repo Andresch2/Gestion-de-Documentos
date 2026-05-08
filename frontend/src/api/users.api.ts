@@ -14,6 +14,9 @@ export const usersApi = {
 
     deleteMe: () => apiClient.delete('/users/me'),
 
+    getAvatar: (userId: string) =>
+        apiClient.get(`/users/${userId}/avatar`, { responseType: 'blob' }),
+
     uploadAvatar: (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
