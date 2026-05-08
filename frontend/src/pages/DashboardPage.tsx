@@ -1,3 +1,4 @@
+import React from 'react';
 import { documentsApi } from '@/api/documents.api';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import { DocumentCard } from '@/components/documents/DocumentCard';
@@ -15,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useSearchParams } from 'react-router-dom';
 
+// Dashboard principal con gestion de documentos
 export function DashboardPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [uploadOpen, setUploadOpen] = useState(false);
