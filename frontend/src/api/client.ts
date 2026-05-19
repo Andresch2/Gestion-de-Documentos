@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/auth.store';
+import { queryClient } from '@/lib/queryClient';
 import axios from 'axios';
 
 export const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -44,12 +45,15 @@ const processQueue = (error: any, token: string | null = null) => {
     failedQueue = [];
 };
 
+const isAuthRequest = (url?: string) =>
+    !!url && ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'].some((path) => url.includes(path));
+
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRequest(originalRequest.url)) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -65,7 +69,7 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const { data } = await axios.post(`${apiBaseUrl}/auth/refresh`, null, {
+                const { data } = await axios.post(`${normalizedApiBaseUrl}/auth/refresh`, null, {
                     withCredentials: true,
                 });
                 const newToken = data.data?.accessToken || data.accessToken;
@@ -76,7 +80,10 @@ apiClient.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 useAuthStore.getState().logout();
-                window.location.href = '/login';
+                queryClient.clear();
+                if (window.location.pathname !== '/login') {
+                    window.location.replace('/login');
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

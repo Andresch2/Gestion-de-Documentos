@@ -9,6 +9,7 @@ import { UploadModal } from '@/components/documents/UploadModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteDocument, useDocuments, useDocumentStats, useExpiringDocuments } from '@/hooks/useDocuments';
+import { useAuthStore } from '@/store/auth.store';
 import type { Document, DocumentQueryParams } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, FileText, FolderOpen, Grid3X3, Link as LinkIcon, List, Upload } from 'lucide-react';
@@ -18,6 +19,7 @@ import { useSearchParams } from 'react-router-dom';
 
 // Dashboard principal con gestion de documentos
 export function DashboardPage() {
+    const userId = useAuthStore((s) => s.user?.id);
     const [searchParams, setSearchParams] = useSearchParams();
     const [uploadOpen, setUploadOpen] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
@@ -40,11 +42,12 @@ export function DashboardPage() {
     const { data: expiring } = useExpiringDocuments();
     const { data: categories } = useCategories();
     const { data: sharedLinks = [] } = useQuery({
-        queryKey: ['shared-links'],
+        queryKey: ['shared-links', userId],
         queryFn: async () => {
             const { data } = await sharedLinksApi.getAll();
             return (data.data || data) as Array<{ id: string }>;
         },
+        enabled: !!userId,
     });
     const deleteDoc = useDeleteDocument();
 

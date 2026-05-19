@@ -1,6 +1,7 @@
 import { authApi } from '@/api/auth.api';
 import { useAuthStore } from '@/store/auth.store';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff, FileText, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,7 +17,9 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const setAuth = useAuthStore((s) => s.setAuth);
+    const logout = useAuthStore((s) => s.logout);
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -29,9 +32,12 @@ export function LoginPage() {
     const onSubmit = async (formData: LoginForm) => {
         setLoading(true);
         setError('');
+        logout();
+        queryClient.clear();
         try {
             const { data } = await authApi.login(formData);
             const result = data.data || data;
+            queryClient.clear();
             setAuth(result.user, result.accessToken);
             navigate('/');
         } catch (err: any) {

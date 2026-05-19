@@ -17,45 +17,56 @@ async function syncCurrentUser() {
 }
 
 export function useDocuments(params?: DocumentQueryParams) {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['documents', params],
+        queryKey: ['documents', userId, params],
         queryFn: async () => {
             const { data } = await documentsApi.getAll(params);
             // Si el backend devuelve { data: [...], meta: {...} }, entonces `data` ya es ese objeto.
             // Si está envuelto de nuevo { data: { data: [...], meta: {...} } }, entonces es data.data
             return (data.meta ? data : data.data) as PaginatedResponse<Document>;
         },
+        enabled: !!userId,
     });
 }
 
 export function useDocument(id: string) {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['documents', id],
+        queryKey: ['documents', userId, id],
         queryFn: async () => {
             const { data } = await documentsApi.getOne(id);
             return (data.data || data) as Document;
         },
-        enabled: !!id,
+        enabled: !!userId && !!id,
     });
 }
 
 export function useDocumentStats() {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['documents', 'stats'],
+        queryKey: ['documents', userId, 'stats'],
         queryFn: async () => {
             const { data } = await documentsApi.getStats();
             return data.data || data;
         },
+        enabled: !!userId,
     });
 }
 
 export function useExpiringDocuments() {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['documents', 'expiring'],
+        queryKey: ['documents', userId, 'expiring'],
         queryFn: async () => {
             const { data } = await documentsApi.getExpiring();
             return (data.data || data) as Document[];
         },
+        enabled: !!userId,
     });
 }
 

@@ -1,14 +1,18 @@
 import { categoriesApi } from '@/api/categories.api';
+import { useAuthStore } from '@/store/auth.store';
 import type { Category } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useCategories() {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['categories'],
+        queryKey: ['categories', userId],
         queryFn: async () => {
             const { data } = await categoriesApi.getAll();
             return (data.data || data) as Category[];
         },
+        enabled: !!userId,
     });
 }
 

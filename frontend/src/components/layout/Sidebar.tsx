@@ -6,7 +6,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useDocumentStats } from '@/hooks/useDocuments';
 import { formatBytes } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Clock, Folder, LayoutDashboard, LogOut, Search, Settings, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -33,16 +33,19 @@ export function Sidebar() {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const queryClient = useQueryClient();
     const logout = useAuthStore((s) => s.logout);
     const user = useAuthStore((s) => s.user);
+    const userId = user?.id;
     const { data: categories } = useCategories();
     const { data: stats } = useDocumentStats();
     const { data: sharedLinks = [] } = useQuery({
-        queryKey: ['shared-links'],
+        queryKey: ['shared-links', userId],
         queryFn: async () => {
             const { data } = await sharedLinksApi.getAll();
             return (data.data || data) as Array<{ id: string }>;
         },
+        enabled: !!userId,
     });
 
     const handleLogout = async () => {
@@ -50,6 +53,7 @@ export function Sidebar() {
             await authApi.logout();
         } catch { }
         logout();
+        queryClient.clear();
         navigate('/login');
     };
 

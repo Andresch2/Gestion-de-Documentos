@@ -40,6 +40,7 @@ function extractErrorMessage(err: any, fallback: string) {
 
 export function SettingsPage() {
     const storedUser = useAuthStore((state) => state.user);
+    const userId = storedUser?.id;
     const updateUser = useAuthStore((state) => state.updateUser);
     const queryClient = useQueryClient();
     const navigate = useNavigate();
@@ -70,11 +71,12 @@ export function SettingsPage() {
     const [categoryMsg, setCategoryMsg] = useState('');
 
     const { data: me } = useQuery({
-        queryKey: ['users', 'me'],
+        queryKey: ['users', userId, 'me'],
         queryFn: async () => {
             const { data } = await usersApi.getMe();
             return (data.data || data) as User;
         },
+        enabled: !!userId,
     });
 
     const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -124,7 +126,7 @@ export function SettingsPage() {
                 storageQuotaBytes: result.storageQuotaBytes,
                 avatarUrl: result.avatarUrl,
             });
-            await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
             setProfileMsg('Perfil actualizado correctamente');
         } catch (err) {
             setProfileMsg(extractErrorMessage(err, 'No se pudo actualizar el perfil'));
@@ -162,7 +164,7 @@ export function SettingsPage() {
             const { data } = await usersApi.uploadAvatar(file);
             const result = (data.data || data) as User;
             updateUser({ avatarUrl: result.avatarUrl });
-            await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
         } catch (err) {
             alert('Error al subir imagen. Revise el tamaño o formato del archivo.');
         }
@@ -174,6 +176,7 @@ export function SettingsPage() {
         try {
             await usersApi.deleteMe();
             useAuthStore.getState().logout();
+            queryClient.clear();
             navigate('/login');
         } catch (err) {
             alert(extractErrorMessage(err, 'No se pudo eliminar la cuenta. Intenta de nuevo.'));

@@ -1,27 +1,30 @@
 import { resolveApiUrl } from '@/api/client';
 import { sharedLinksApi } from '@/api/shared-links.api';
 import { formatDate } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth.store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, ExternalLink, Share2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export function SharedLinksPage() {
     const queryClient = useQueryClient();
+    const userId = useAuthStore((s) => s.user?.id);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const { data: linksRes, isLoading } = useQuery({
-        queryKey: ['shared-links'],
+        queryKey: ['shared-links', userId],
         queryFn: async () => {
             const { data } = await sharedLinksApi.getAll();
             return data.data || data;
         },
+        enabled: !!userId,
     });
 
     const deleteLink = useMutation({
         mutationFn: (id: string) => sharedLinksApi.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['shared-links'] });
-            queryClient.invalidateQueries({ queryKey: ['documents', 'stats'] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
         },
     });
 

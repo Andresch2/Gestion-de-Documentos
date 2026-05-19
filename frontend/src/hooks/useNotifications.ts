@@ -1,9 +1,12 @@
 import { notificationsApi } from '@/api/notifications.api';
+import { useAuthStore } from '@/store/auth.store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useNotifications(page?: number) {
+    const userId = useAuthStore((s) => s.user?.id);
+
     return useQuery({
-        queryKey: ['notifications', page],
+        queryKey: ['notifications', userId, page],
         queryFn: async () => {
             const { data } = await notificationsApi.getAll(page);
             const payload =
@@ -18,6 +21,7 @@ export function useNotifications(page?: number) {
             };
         },
         refetchInterval: 30000, // Poll every 30s
+        enabled: !!userId,
     });
 }
 
