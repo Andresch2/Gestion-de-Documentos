@@ -138,6 +138,22 @@ export class DocumentsController {
         res.send(storedFile.buffer);
     }
 
+    @Get(':id/preview')
+    @ApiOperation({ summary: 'Previsualizar documento' })
+    async preview(
+        @Param('id') id: string,
+        @CurrentUser('id') userId: string,
+        @Res() res: Response,
+    ) {
+        const doc = await this.documentsService.findOne(id, userId);
+        const storedFile = await this.storageService.download(doc.fileKey);
+
+        res.type(doc.mimeType || storedFile.contentType || 'application/octet-stream');
+        res.setHeader('Content-Length', storedFile.buffer.byteLength.toString());
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName)}"`);
+        res.send(storedFile.buffer);
+    }
+
     @Patch(':id')
     @ApiOperation({ summary: 'Actualizar documento' })
     async update(

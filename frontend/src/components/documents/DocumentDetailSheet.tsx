@@ -1,7 +1,9 @@
+import { documentsApi } from '@/api/documents.api';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { daysUntil, formatBytes, formatDate, getExpiryColor } from '@/lib/utils';
 import type { Document } from '@/types';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { Building, Calendar, Download, FileText, Hash, Pencil, Share2, Trash2, X } from 'lucide-react';
+import { Building, Calendar, Download, Eye, FileText, Hash, Pencil, Share2, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     document: Document | null;
@@ -14,14 +16,58 @@ interface Props {
 }
 
 export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload, onDelete, onShare, onEdit }: Props) {
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewError, setPreviewError] = useState('');
+
+    useEffect(() => {
+        if (!isOpen || !doc) {
+            setPreviewUrl(null);
+            setPreviewError('');
+            setPreviewLoading(false);
+            return;
+        }
+
+        const canPreview = doc.mimeType === 'application/pdf' || doc.mimeType.startsWith('image/');
+        if (!canPreview) {
+            setPreviewUrl(null);
+            setPreviewError('');
+            return;
+        }
+
+        let objectUrl: string | null = null;
+        let cancelled = false;
+        setPreviewLoading(true);
+        setPreviewError('');
+
+        documentsApi.preview(doc.id)
+            .then((response) => {
+                if (cancelled) return;
+                objectUrl = URL.createObjectURL(new Blob([response.data], { type: doc.mimeType }));
+                setPreviewUrl(objectUrl);
+            })
+            .catch(() => {
+                if (!cancelled) setPreviewError('No se pudo cargar la vista previa');
+            })
+            .finally(() => {
+                if (!cancelled) setPreviewLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [doc, isOpen]);
+
     if (!isOpen || !doc) return null;
 
     const days = daysUntil(doc.expiryDate);
+    const canPreview = doc.mimeType === 'application/pdf' || doc.mimeType.startsWith('image/');
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end">
             <div className="absolute inset-0 bg-slate-900/30" onClick={onClose} />
-            <div className="relative w-full max-w-[400px] overflow-y-auto border-l border-slate-200 bg-white shadow-2xl animate-slide-in">
+            <div className="relative w-full max-w-[720px] overflow-y-auto border-l border-slate-200 bg-white shadow-2xl animate-slide-in">
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
                     <h2 className="truncate text-lg font-semibold text-slate-900">{doc.name}</h2>
                     <button onClick={onClose} className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100">
@@ -29,16 +75,41 @@ export function DocumentDetailSheet({ document: doc, isOpen, onClose, onDownload
                     </button>
                 </div>
 
-                <div
-                    className="flex h-40 items-center justify-center"
-                    style={{ backgroundColor: doc.category?.color ? `${doc.category.color}15` : '#f1f5f9' }}
-                >
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-                        <CategoryIcon
-                            name={doc.category?.icon || 'FileText'}
-                            className="h-14 w-14"
-                            style={{ color: doc.category?.color || '#94a3b8' }}
-                        />
+                <div className="border-b border-slate-200 bg-slate-100 p-4">
+                    <div className="flex h-[420px] items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        {previewLoading ? (
+                            <div className="flex flex-col items-center gap-2 text-slate-500">
+                                <Eye className="h-8 w-8 animate-pulse" />
+                                <p className="text-sm">Cargando vista previa...</p>
+                            </div>
+                        ) : previewUrl && doc.mimeType === 'application/pdf' ? (
+                            <iframe
+                                title={`Vista previa de ${doc.name}`}
+                                src={previewUrl}
+                                className="h-full w-full"
+                            />
+                        ) : previewUrl && doc.mimeType.startsWith('image/') ? (
+                            <img
+                                src={previewUrl}
+                                alt={`Vista previa de ${doc.name}`}
+                                className="h-full w-full object-contain"
+                            />
+                        ) : (
+                            <div className="flex flex-col items-center gap-3 px-6 text-center text-slate-500">
+                                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <CategoryIcon
+                                        name={doc.category?.icon || 'FileText'}
+                                        className="h-14 w-14"
+                                        style={{ color: doc.category?.color || '#94a3b8' }}
+                                    />
+                                </div>
+                                <p className="text-sm">
+                                    {canPreview
+                                        ? previewError || 'Vista previa no disponible'
+                                        : 'Este tipo de archivo se puede descargar, pero no se puede previsualizar en el navegador'}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

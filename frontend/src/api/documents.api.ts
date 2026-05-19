@@ -33,4 +33,7 @@ export const documentsApi = {
 
     download: (id: string) =>
         apiClient.get(`/documents/${id}/download`, { responseType: 'blob' }),
+
+    preview: (id: string) =>
+        apiClient.get(`/documents/${id}/preview`, { responseType: 'blob' }),
 };
